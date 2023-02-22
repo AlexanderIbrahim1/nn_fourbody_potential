@@ -14,7 +14,8 @@ from dispersion4b.shortrange.short_range_functions import ExponentialDecay
 
 from nn_fourbody_potential import constants
 
-def create_four_body_analytic_potential() -> FourBodyAnalyticPotential:
+
+def create_fourbody_analytic_potential() -> FourBodyAnalyticPotential:
     """
     Create a 'FourBodyAnalyticPotential' with:
         - the Midzuno-Kihara C12 coefficient
@@ -44,4 +45,3 @@ def create_four_body_analytic_potential() -> FourBodyAnalyticPotential:
     short_long_atten = DistanceParameterFunction(atten_function, sum_of_sidelengths)
 
     return FourBodyAnalyticPotential(disp_pot, short_range_pot, short_long_atten)
-

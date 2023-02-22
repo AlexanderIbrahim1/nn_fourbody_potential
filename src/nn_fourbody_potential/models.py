@@ -69,4 +69,3 @@ def _create_linear_sequential(layer_sizes: list[int]) -> torch.nn.Sequential:
         layers.append(torch.nn.Linear(layer_sizes[-2], layer_sizes[-1]))
 
     return torch.nn.Sequential(*layers)
-
