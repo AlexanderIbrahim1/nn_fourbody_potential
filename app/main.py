@@ -1,12 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
-from typing import Optional
-from typing import Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 import torch
@@ -17,13 +12,12 @@ from torchtyping import TensorType
 from torchtyping import patch_typeguard
 from typeguard import typechecked
 
-from regression1d.models import RegressionMultilayerPerceptron
-from regression1d.dataset import PotentialDataset
-
-from dataio import load_fourbody_training_data
-
-from generate_pes_data import generate_training_data
-from generate_pes_data import get_distribution
+from nn_fourbody_potential.dataio import load_fourbody_training_data
+from nn_fourbody_potential.dataset import PotentialDataset
+from nn_fourbody_potential.fourbody_potential import create_fourbody_analytic_potential
+from nn_fourbody_potential.models import RegressionMultilayerPerceptron
+from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
+from nn_fourbody_potential.sidelength_distributions import generate_training_data
 
 patch_typeguard()
 
@@ -109,7 +103,7 @@ def test_model(model: RegressionMutlilayerPerceptron, modelfile: Path, n_samples
     model.load_state_dict(torch.load(modelfile))
     model.eval()
 
-    distrib = get_distribution()
+    distrib = get_abinit_tetrahedron_distribution()
     sidelengths_test, energies_test = generate_training_data(n_samples, distrib)
     energies_test = add_dummy_dimension(energies_test)
 
@@ -128,7 +122,7 @@ def test_model(model: RegressionMutlilayerPerceptron, modelfile: Path, n_samples
 if __name__ == "__main__":
     model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, [16, 32, 32, 16])
     modelfile = Path(".", "models", "nn_pes_model_16_32_32_16.pth")
-    #traindata_filename = Path('.', 'data', 'training_data.dat')
-    #train_model(traindata_filename, model, modelfile)
+    traindata_filename = Path('.', 'data', 'training_data.dat')
+    train_model(traindata_filename, model, modelfile)
 
     test_model(model, modelfile, 50000)
