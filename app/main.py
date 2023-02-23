@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -18,6 +19,10 @@ from nn_fourbody_potential.fourbody_potential import create_fourbody_analytic_po
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
 from nn_fourbody_potential.sidelength_distributions import generate_training_data
+
+from transformations import SixSideLengthsTransformer
+from transformations import ReciprocalTransformer
+from transformations import MinimumPermutationTransformer
 
 patch_typeguard()
 
@@ -42,15 +47,40 @@ def check_training_data_sizes(xdata, ydata) -> None:
     assert n_outputs == N_OUTPUTS
 
 
-def train_model(traindata_filename: Path, model: RegressionMultilayerPerceptron, modelfile: Path):
+def apply_transformations_to_sidelengths(
+    sidelengths: np.ndarray[float, float],
+    data_transforms: list[SixSideLengthsTransformer],
+) -> np.ndarray[float, float]:
+    transformed_sidelengths = np.empty(sidelengths.shape, dtype=sidelengths.dtype)
+
+    for (n_sample, sidelens) in enumerate(sidelengths):
+        for transform in data_transforms:
+            sidelens = transform(sidelens)
+
+        transformed_sidelengths[n_sample] = sidelens
+
+    return transformed_sidelengths
+
+
+def train_model(
+    traindata_filename: Path,
+    model: RegressionMultilayerPerceptron,
+    modelfile: Path,
+    data_transforms: Optional[list[SixSideLengthsTransformer]] = None,
+) -> None:
+    if data_transforms is None: 
+        data_transforms = []
+
     seed = 0
-    learning_rate = 5.0e-3
-    n_epochs = 200
+    learning_rate = 1.0e-2
+    n_epochs = 500
     batch_size = 1000
 
     np.random.seed(seed)
 
     sidelengths_train, energies_train = load_fourbody_training_data(traindata_filename)
+
+    sidelengths_train = apply_transformations_to_sidelengths(sidelengths_train, data_transforms)
     energies_train = add_dummy_dimension(energies_train)
 
     x_train = torch.from_numpy(sidelengths_train.astype(np.float32))
@@ -99,12 +129,20 @@ def calculate_rmse(y_test: torch.Tensor, y_estim: torch.Tensor) -> float:
     return np.sqrt(total_square_error / n_samples)
 
 
-def test_model(model: RegressionMutlilayerPerceptron, modelfile: Path, n_samples):
+def test_model(
+    model: RegressionMutlilayerPerceptron,
+    modelfile: Path,
+    n_samples: int,
+    data_transforms: Optional[list[SixSideLengthsTransformer]] = None,
+) -> None:
     model.load_state_dict(torch.load(modelfile))
     model.eval()
 
     distrib = get_abinit_tetrahedron_distribution()
-    sidelengths_test, energies_test = generate_training_data(n_samples, distrib)
+    potential = create_fourbody_analytic_potential()
+    sidelengths_test, energies_test = generate_training_data(n_samples, distrib, potential)
+
+    sidelengths_test = apply_transformations_to_sidelengths(sidelengths_test, data_transforms)
     energies_test = add_dummy_dimension(energies_test)
 
     with torch.no_grad():
@@ -120,9 +158,9 @@ def test_model(model: RegressionMutlilayerPerceptron, modelfile: Path, n_samples
 
 
 if __name__ == "__main__":
-    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, [16, 32, 32, 16])
-    modelfile = Path(".", "models", "nn_pes_model_16_32_32_16.pth")
+    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, [16, 32, 64, 32, 16])
+    modelfile = Path(".", "models", "nn_pes_model_16_32_64_32_16_minpermute_reciprocal_lr001_epoch500.pth")
     traindata_filename = Path('.', 'data', 'training_data.dat')
-    train_model(traindata_filename, model, modelfile)
-
-    test_model(model, modelfile, 50000)
+    data_transforms = [MinimumPermutationTransformer(), ReciprocalTransformer()]
+    #train_model(traindata_filename, model, modelfile, data_transforms)
+    #test_model(model, modelfile, 50000, data_transforms)
