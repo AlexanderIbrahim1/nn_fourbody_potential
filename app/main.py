@@ -73,8 +73,8 @@ def train_model(
 
     seed = 0
     learning_rate = 5.0e-3
-    n_epochs = 400
-    batch_size = 5000
+    n_epochs = 500
+    batch_size = 1000
 
     np.random.seed(seed)
 
@@ -158,9 +158,9 @@ def test_model(
 
 
 if __name__ == "__main__":
-    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, [32, 64, 64, 32])
-    modelfile = Path(".", "models", "nn_pes_model_32_64_64_32_minpermute_reciprocal_lr0005_epoch500_batch5000_data20000.pth")
-    traindata_filename = Path('.', 'data', 'training_data_20000.dat')
+    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, [64, 128, 128, 64])
+    modelfile = Path(".", "models", "nn_pes_model_64_128_128_64_minpermute_reciprocal_lr0005_epoch500_batch1000_data5000.pth")
+    traindata_filename = Path('.', 'data', 'training_data_5000.dat')
     data_transforms = [MinimumPermutationTransformer(), ReciprocalTransformer()]
     train_model(traindata_filename, model, modelfile, data_transforms)
     test_model(model, modelfile, 50000, data_transforms)
