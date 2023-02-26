@@ -19,9 +19,9 @@ from nn_fourbody_potential.dataio import save_fourbody_training_data
 
 def main() -> None:
     n_samples = 5000
-    distrib = get_abinit_tetrahedron_distribution()
+    distrib = get_abinit_tetrahedron_distribution(2.2, 5.0)
     potential = create_fourbody_analytic_potential()
-    filename = Path("data", f"training_data_{n_samples}.dat")
+    filename = Path("data", f"training_data_{n_samples}_2.2_5.0.dat")
 
     sidelengths, energies = generate_training_data(n_samples, distrib, potential)
     save_fourbody_training_data(filename, sidelengths, energies)

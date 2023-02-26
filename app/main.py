@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 
@@ -61,7 +62,7 @@ def train_model(
     learning_rate = 5.0e-3
     n_epochs = 500
     batch_size = 1000
-    weight_decay=5.0e-4
+    weight_decay=1.0e-4
 
     np.random.seed(seed)
 
@@ -117,7 +118,7 @@ def calculate_rmse(y_test: torch.Tensor, y_estim: torch.Tensor) -> float:
 
 
 def test_model(
-    model: RegressionMutlilayerPerceptron,
+    model: RegressionMultilayerPerceptron,
     modelfile: Path,
     n_samples: int,
     data_transforms: Optional[list[SixSideLengthsTransformer]] = None,
@@ -125,7 +126,7 @@ def test_model(
     model.load_state_dict(torch.load(modelfile))
     model.eval()
 
-    distrib = get_abinit_tetrahedron_distribution()
+    distrib = get_abinit_tetrahedron_distribution(2.2, 10.0)
     potential = create_fourbody_analytic_potential()
     sidelengths_test, energies_test = generate_training_data(n_samples, distrib, potential)
 
@@ -146,9 +147,8 @@ def test_model(
 
 if __name__ == "__main__":
     model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, [64, 128, 128, 64])
-    modelfile = Path(".", "models", "dummy.pth")
-    #modelfile = Path(".", "models", "nn_pes_model_64_128_128_64_minpermute_reciprocal_lr0005_epoch500_batch1000_wdecay_000005_data5000.pth")
-    traindata_filename = Path('.', 'data', 'training_data_5000.dat')
+    modelfile = Path(".", "models", "nn_pes_model_64_128_128_64_minpermute_reciprocal_lr0005_epoch500_batch1000_wdecay_00001_data5000_2.2to5.0.pth")
+    traindata_filename = Path('.', 'data', 'training_data_5000_2.2_5.0.dat')
     data_transforms = [MinimumPermutationTransformer(), ReciprocalTransformer()]
     train_model(traindata_filename, model, modelfile, data_transforms)
     test_model(model, modelfile, 50000, data_transforms)
