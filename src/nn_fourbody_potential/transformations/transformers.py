@@ -12,6 +12,7 @@ import math
 from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
+from dataclasses import field
 from typing import Callable
 from typing import Tuple
 
@@ -61,3 +62,36 @@ class MinimumPermutationTransformer(SixSideLengthsTransformer):
 
     def __call__(self, sidelens: SixSideLengths) -> TransformedSideLengths:
         return minimum_permutation(sidelens, self.less_than_comparator)
+
+
+@dataclass(frozen=True)
+class StandardizeTransformer(SixSideLengthsTransformer):
+    """
+    Map all six values linearly from [a, b] to [c, d].
+    """
+
+    init_pair: Tuple[float, float]
+    final_pair: Tuple[float, float]
+    linear_func: Callable[[float], float] = field(init=False)
+
+    def __post_init__(self) -> None:
+        assert self.init_pair[0] < self.init_pair[1]
+        assert self.final_pair[0] < self.final_pair[1]
+
+        def map_init_pair_to_final_pair(x: float) -> float:
+            a = self.init_pair[0]
+            b = self.init_pair[1]
+            c = self.final_pair[0]
+            d = self.final_pair[1]
+
+            # subtract a              ; map (a, b) to (0, b-a)
+            # multiply by (d-c)/(b-a) ; map (0, b-a) to (0, d-c)
+            # add c                   ; map (0, d-c) to (c, d)
+
+            slope = (d - c) / (b - a)
+            return (x - a) * slope + c
+
+        object.__setattr__(self, "linear_func", map_init_pair_to_final_pair)
+
+    def __call__(self, sidelens: SixSideLengths) -> TransformedSideLengths:
+        return tuple([self.linear_func(s) for s in sidelens])
