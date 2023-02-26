@@ -47,12 +47,12 @@ def generate_training_data(
     for i_sample in range(n_samples):
         points = sample_fourbody_geometry(distrib)
         sample_energies[i_sample] = potential(points)
-        sample_sidelengths[i_sample] = _get_sidelengths(points)
+        sample_sidelengths[i_sample] = get_sidelengths(points)
 
     return sample_sidelengths, sample_energies
 
 
-def _get_sidelengths(points: FourCartesianPoints) -> SixSideLengths:
+def get_sidelengths(points: FourCartesianPoints) -> SixSideLengths:
     # NOTE: I *could* modify hydro4b_coords.generate.sample_fourbody_geometry to also return side lengths
     #     -> but they might be out of order from the actually generated points?
     #     -> so I'll recalculate them from the points just in case
