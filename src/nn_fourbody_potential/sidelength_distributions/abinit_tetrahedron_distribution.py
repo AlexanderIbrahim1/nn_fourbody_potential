@@ -12,7 +12,9 @@ from hydro4b_coords.generate.distributions import exponential_decay_distribution
 from nn_fourbody_potential import constants
 
 
-def get_abinit_tetrahedron_distribution() -> DiscretizedDistribution:
+def get_abinit_tetrahedron_distribution(
+    x_min: float, x_max: float
+) -> DiscretizedDistribution:
     distrib = exponential_decay_distribution(
         n_terms=1024,
         x_min=2.2,
