@@ -61,4 +61,3 @@ class MinimumPermutationTransformer(SixSideLengthsTransformer):
 
     def __call__(self, sidelens: SixSideLengths) -> TransformedSideLengths:
         return minimum_permutation(sidelens, self.less_than_comparator)
-
