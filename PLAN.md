@@ -14,18 +14,25 @@ TODO:
     - I have switched to sampling sidelengths between 2.2 and 5.0 (instead of 2.2 and 10.0)
     - I'll find out if it works soon
 
-- feed the "classical EOS geometries" into the training data
-  - how does it affect the test error when used with the dummy PES?
-  - because I'll probably end up doing that with the *ab initio* NN PES
-
-- save the loss at each epoch into a file, to be able to see trends
-- save the model at every n^th epoch
-  - the .pth files don't seem to take up very much memory, so this is reasonable for now
-
 - [x] try out some weight regularization methods; see if they improve the situation
 - I have done this!
   - good results come from using a weight decay value of 0.0001
   - I have tried 5e-4 and 5e-5, but they don't work as well
+
+- [x] the Adam optimizer is probably fine
+  - I have settled on this optimizer
+
+- [] clean up the NN training pipeline
+  - create a separate subdirectory for each trained model
+    - there should be a README.md file inside that describes the model
+  - save the loss at each epoch into a file, so the trends are easier to see
+    - I also need this information for early stopping
+  - save the model at every n^th epoch
+    - the .pth files don't seem to take up very much memory, so this is reasonable for now
+
+- feed the "classical EOS geometries" into the training data
+  - how does it affect the test error when used with the dummy PES?
+  - because I'll probably end up doing that with the *ab initio* NN PES
 
 - normalize the starting 1/r values so they are all between [0, 1]
   - though I doubt this will actually improve things?
@@ -33,5 +40,3 @@ TODO:
 - increasing the model's size does seem to help
   - keep trying deeper and wider models, and see how far the test error can go down!
 
-- [x] the Adam optimizer is probably fine
-  - I have settled on this optimizer
