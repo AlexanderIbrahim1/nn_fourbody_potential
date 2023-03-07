@@ -1,30 +1,35 @@
 from __future__ import annotations
 
-from copy import deepcopy
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 
 import torch
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
-
-from torchtyping import TensorType
 from torchtyping import patch_typeguard
-from typeguard import typechecked
 
 from nn_fourbody_potential.dataio import load_fourbody_training_data
 from nn_fourbody_potential.dataset import PotentialDataset
 from nn_fourbody_potential.fourbody_potential import create_fourbody_analytic_potential
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
-from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
+from nn_fourbody_potential.models import TrainingParameters
+from nn_fourbody_potential.sidelength_distributions import (
+    get_abinit_tetrahedron_distribution,
+)
 from nn_fourbody_potential.sidelength_distributions import generate_training_data
+
+from nn_fourbody_potential.modelio import ModelSaver
+from nn_fourbody_potential.modelio import write_training_parameters
+from nn_fourbody_potential.modelio import TestingErrorWriter
+from nn_fourbody_potential.modelio import model_directory_name
 
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations import ReciprocalTransformer
 from nn_fourbody_potential.transformations import MinimumPermutationTransformer
-from nn_fourbody_potential.transformations import apply_transformations_to_sidelengths_data
+from nn_fourbody_potential.transformations import StandardizeTransformer
+from nn_fourbody_potential.transformations import (
+    apply_transformations_to_sidelengths_data,
+)
 
 patch_typeguard()
 
@@ -37,6 +42,7 @@ def add_dummy_dimension(data: np.ndarray[float]) -> np.ndarray[float, float]:
     assert len(data.shape) == 1
 
     return data.reshape(data.size, -1)
+
 
 def check_training_data_sizes(xdata, ydata) -> None:
     # this is a situation where the number of features and the number of outputs is unlikely
@@ -51,70 +57,81 @@ def check_training_data_sizes(xdata, ydata) -> None:
 
 def train_model(
     traindata_filename: Path,
+    params: TrainingParameters,
     model: RegressionMultilayerPerceptron,
-    modelfile: Path,
-    data_transforms: Optional[list[SixSideLengthsTransformer]] = None,
+    modelpath: Path,
+    model_saver: ModelSaver,
+    save_every: Optional[int] = None,
 ) -> None:
-    if data_transforms is None: 
-        data_transforms = []
+    if save_every is None:
+        save_every = params.total_epochs
 
-    seed = 0
-    learning_rate = 5.0e-3
-    n_epochs = 500
-    batch_size = 1000
-    weight_decay=1.0e-4
+    np.random.seed(params.seed)
 
-    np.random.seed(seed)
+    testing_error_writer = TestingErrorWriter(modelpath)
 
     sidelengths_train, energies_train = load_fourbody_training_data(traindata_filename)
 
-    sidelengths_train = apply_transformations_to_sidelengths_data(sidelengths_train, data_transforms)
+    sidelengths_train = apply_transformations_to_sidelengths_data(
+        sidelengths_train, params.transformations
+    )
     energies_train = add_dummy_dimension(energies_train)
 
     x_train = torch.from_numpy(sidelengths_train.astype(np.float32))
     y_train = torch.from_numpy(energies_train.astype(np.float32))
 
     check_training_data_sizes(x_train, y_train)
-    
+
     trainset = PotentialDataset(x_train, y_train)
     trainloader = torch.utils.data.DataLoader(
-        trainset, batch_size=batch_size, shuffle=True, num_workers=1
+        trainset, batch_size=params.batch_size, shuffle=True, num_workers=1
     )
 
     loss_calculator = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay
+    )
+    
+    batch_to_datasize_ratio = params.batch_size / params.training_size
 
-    for i_epoch in range(n_epochs):
+    for i_epoch in range(params.total_epochs):
 
         current_loss = 0.0
-        for (i_batch, batch_data) in enumerate(trainloader):
-            y_predicted = model(x_train)
+        for (x_batch, y_batch) in trainloader:
+            y_batch_predicted = model(x_batch)
 
-            loss = loss_calculator(y_train, y_predicted)
+            loss = loss_calculator(y_batch, y_batch_predicted)
             loss.backward()
 
             optimizer.step()
             optimizer.zero_grad()
 
             current_loss += loss.item()
-            if i_epoch % 20 == 0 and i_epoch != 0:
-                print(f"(epoch, loss) = ({i_epoch}, {current_loss:.4f})")
-                current_loss = 0.0
+        
+        epoch_loss = current_loss * batch_to_datasize_ratio
 
-    torch.save(model.state_dict(), modelfile)
+        testing_error_writer.append(i_epoch, epoch_loss)
+        print(f"(epoch, loss) = ({i_epoch}, {epoch_loss:.4f})")
+
+        if i_epoch % save_every == 0 and i_epoch != 0:
+            model_saver.save_model(model, epoch=i_epoch)
+
+    model_saver.save_model(model, epoch=params.total_epochs - 1)
 
 
-def calculate_rmse(y_test: torch.Tensor, y_estim: torch.Tensor) -> float:
+def calculate_mse(y_test: torch.Tensor, y_estim: torch.Tensor) -> float:
     assert y_test.shape == y_estim.shape
 
     n_samples = y_test.shape[0]
 
-    total_square_error = np.sum([
-        (y_test_val - y_estim_val)**2
-        for (y_test_val, y_estim_val) in zip(y_test[:,0], y_estim[:,0])
-    ])
+    total_square_error = np.sum(
+        [
+            (y_test_val - y_estim_val) ** 2
+            for (y_test_val, y_estim_val) in zip(y_test[:, 0], y_estim[:, 0])
+        ]
+    )
 
-    return np.sqrt(total_square_error / n_samples)
+    return total_square_error / n_samples
 
 
 def test_model(
@@ -126,29 +143,80 @@ def test_model(
     model.load_state_dict(torch.load(modelfile))
     model.eval()
 
-    distrib = get_abinit_tetrahedron_distribution(2.2, 10.0)
+    distrib = get_abinit_tetrahedron_distribution(2.2, 5.0)
     potential = create_fourbody_analytic_potential()
-    sidelengths_test, energies_test = generate_training_data(n_samples, distrib, potential)
+    sidelengths_test, energies_test = generate_training_data(
+        n_samples, distrib, potential
+    )
 
-    sidelengths_test = apply_transformations_to_sidelengths_data(sidelengths_test, data_transforms)
+    sidelengths_test = apply_transformations_to_sidelengths_data(
+        sidelengths_test, data_transforms
+    )
     energies_test = add_dummy_dimension(energies_test)
 
     with torch.no_grad():
         x_test = torch.from_numpy(sidelengths_test.astype(np.float32))
         y_test = torch.from_numpy(energies_test.astype(np.float32))
-    
+
         y_estim = model(x_test)
 
         y_test.detach()
         y_estim.detach()
-        rmse = calculate_rmse(y_test, y_estim)
-        print(f"rmse = {rmse: .12f}")
+        mse = calculate_mse(y_test, y_estim)
+        print(f"mse = {mse: .12f}")
+
+
+def number_of_lines(file: Path) -> int:
+    with open(file, "r") as fin:
+        counter = 0
+        for _ in fin:
+            counter += 1
+
+        return counter
 
 
 if __name__ == "__main__":
-    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, [64, 128, 128, 64])
-    modelfile = Path(".", "models", "nn_pes_model_64_128_128_64_minpermute_reciprocal_lr0005_epoch500_batch1000_wdecay_00001_data5000_2.2to5.0.pth")
-    traindata_filename = Path('.', 'data', 'training_data_5000_2.2_5.0.dat')
-    data_transforms = [MinimumPermutationTransformer(), ReciprocalTransformer()]
-    train_model(traindata_filename, model, modelfile, data_transforms)
-    test_model(model, modelfile, 50000, data_transforms)
+    min_sidelength = 2.2
+    max_sidelength = 5.0
+
+    traindata_filename = Path(".", "data", "training_data_5000_2.2_5.0.dat")
+
+    data_transforms = [
+        ReciprocalTransformer(),
+        StandardizeTransformer(
+            (1.0 / max_sidelength, 1.0 / min_sidelength), (0.0, 1.0)
+        ),
+        MinimumPermutationTransformer(),
+    ]
+
+    params = TrainingParameters(
+        seed=0,
+        layers=[16, 32, 32, 16],
+        learning_rate=5.0e-3,
+        weight_decay=1.0e-4,
+        training_size=number_of_lines(traindata_filename),
+        total_epochs=100,
+        batch_size=1000,
+        transformations=data_transforms,
+        other="",
+    )
+
+    modelpath = Path.cwd() / "models" / model_directory_name(
+        params.layers, params.learning_rate, params.training_size, other="nnpes"
+    )
+    #modelpath.mkdir()
+
+    training_parameters_file = modelpath / "training_parameters.dat"
+    #write_training_parameters(training_parameters_file, params)
+
+    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, params.layers)
+
+    model_saver = ModelSaver(modelpath / "models")
+
+    #train_model(traindata_filename, params, model, modelpath, model_saver, 20)
+    test_model(
+        model,
+        model_saver.get_model_filename(params.total_epochs - 1),
+        50000,
+        data_transforms,
+    )

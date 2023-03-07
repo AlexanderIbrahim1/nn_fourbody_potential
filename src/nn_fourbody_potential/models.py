@@ -5,13 +5,38 @@ TODO: turn asserts into exceptions
 """
 
 import torch
-
 from torchtyping import TensorType
 from torchtyping import patch_typeguard
 from typeguard import typechecked
 
+from nn_fourbody_potential.transformations.transformers import SixSideLengthsTransformer
+
 
 patch_typeguard()
+
+# dataclass in Python 3.9 doesn't have support for keyword-only parameters, so I have to
+# write out the entire constructor
+class TrainingParameters:
+    def __init__(self,
+        seed: int,
+        layers: list[int],
+        learning_rate: float,
+        weight_decay: float,
+        training_size: int,
+        total_epochs: int,
+        batch_size: int,
+        transformations: list[SixSideLengthsTransformer],
+        other: str,
+    ) -> None:
+        self.seed = seed
+        self.layers = layers
+        self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
+        self.training_size = training_size
+        self.total_epochs = total_epochs
+        self.batch_size = batch_size
+        self.transformations = transformations
+        self.other = other
 
 
 @typechecked
