@@ -72,15 +72,13 @@ def main() -> None:
     geometry_func = MAP_GEOMETRY_TAG_TO_FUNCTION[geometry_tag]
 
     lattice_constants = np.linspace(2.2, 6.0, 256)
-    groups_of_points = [
-        geometry_func(lat_const) for lat_const in lattice_constants
-    ]
+    groups_of_points = [geometry_func(lat_const) for lat_const in lattice_constants]
 
     model = RegressionMultilayerPerceptron(6, 1, [64, 128, 128, 64])
     modelfile = Path(
         ".",
         "models",
-        "nn_pes_model_64_128_128_64_minpermute_reciprocal_lr0005_epoch500_batch1000_wdecay_00001_data5000_2.2to5.0.pth",
+        "nn_pes_model_64_128_128_64_minpermute_reciprocal_lr0005_epoch500_batch1000_wdecay_00001_data5000.pth",
     )
     data_transforms = [MinimumPermutationTransformer(), ReciprocalTransformer()]
 
@@ -90,14 +88,35 @@ def main() -> None:
     )
 
     fig, ax = plt.subplots()
-    ax.plot(lattice_constants, analytic_energies, label='analytic')
-    ax.plot(lattice_constants, model_energies, label='model')
-    plt.show()
+
+    ax.set_title(r"Interaction energy for tetrahedron", fontsize=18)
+    ax.set_xlabel(r"lattice constant $ / \ \AA $", fontsize=18)
+    ax.set_ylabel(r"energy $ / \ \mathrm{cm}^{-1} $", fontsize=18)
+
+    ax.set_xlim(2.0, 6.0)
+    ax.set_ylim(-20.0, 220.0)
+
+    ax.set_xticks(np.arange(2.0, 6.001, 0.1), minor=True)
+    ax.set_yticks(np.arange(-20.0, 220.01, 40.0), minor=False)
+    ax.set_yticks(np.arange(-20.0, 220.01, 8.0), minor=True)
+
+    ax.axhline(y=0, xmin=0.0, xmax=1.0, color="k", lw=1, alpha=0.5)
+    ax.plot(lattice_constants, analytic_energies, label="analytic (dummy)")
+    ax.plot(lattice_constants, model_energies, label="neural network")
+
+    ax.legend(fontsize=14)
+
+    fig.tight_layout()
+
+    # plt.show()
+    plt.savefig("neural_network_energy_example.png", dpi=400)
+
 
 if __name__ == "__main__":
-    
-    standardized_transformer = StandardizeTransformer((2.2, 10.0), (1.0, 2.0))
-    s = (2.2, 2.5, 2.8, 3.4, 5.5, 10.0)
-    st = standardized_transformer(s)
-    
-    print(st)
+    main()
+
+#    standardized_transformer = StandardizeTransformer((2.2, 10.0), (1.0, 2.0))
+#    s = (2.2, 2.5, 2.8, 3.4, 5.5, 10.0)
+#    st = standardized_transformer(s)
+#
+#    print(st)
