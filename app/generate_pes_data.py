@@ -11,7 +11,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from nn_fourbody_potential.fourbody_potential import create_fourbody_analytic_potential
-from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
+from nn_fourbody_potential.sidelength_distributions import (
+    get_abinit_tetrahedron_distribution,
+)
 from nn_fourbody_potential.sidelength_distributions import generate_training_data
 
 from nn_fourbody_potential.dataio import save_fourbody_training_data
