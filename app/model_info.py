@@ -25,12 +25,12 @@ def number_of_lines(file: Path) -> int:
 
 
 def get_training_data_filepath() -> Path:
-    return Path(".", "data", "training_data_5000_2.2_5.0.dat")
+    return Path(".", "data", "training_data_8901_2.2_4.5.dat")
 
 
 def get_data_transforms() -> list[SixSideLengthsTransformer]:
     min_sidelen = 2.2
-    max_sidelen = 5.0
+    max_sidelen = 4.5
 
     return [
         ReciprocalTransformer(),
@@ -48,7 +48,7 @@ def get_training_parameters(
         learning_rate=5.0e-3,
         weight_decay=1.0e-4,
         training_size=number_of_lines(training_data_filepath),
-        total_epochs=100,
+        total_epochs=500,
         batch_size=1000,
         transformations=data_transforms,
         other="",
@@ -72,26 +72,3 @@ def get_training_parameters_filepath(params: TrainingParameters) -> Path:
 def get_saved_models_dirpath(params: TrainingParameters) -> Path:
     modelpath = get_path_to_model(params)
     return modelpath / "models"
-
-
-if __name__ == "__main__":
-
-    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, params.layers)
-
-    modelpath = get_path_to_model(params)
-    if not modelpath.exists():
-        modelpath.mkdir()
-
-    training_parameters_filepath = get_training_parameters_filepath(params)
-    write_training_parameters(training_parameters_filepath, params, overwrite=False)
-
-    saved_models_filepath = get_saved_models_dirpath(params)
-    model_saver = ModelSaver(saved_models_filepath)
-
-    train_model(traindata_filename, params, model, modelpath, model_saver, 20)
-    test_model(
-        model,
-        model_saver.get_model_filename(params.total_epochs - 1),
-        50000,
-        data_transforms,
-    )

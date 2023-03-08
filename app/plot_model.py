@@ -22,9 +22,6 @@ from nn_fourbody_potential.fourbody_potential import create_fourbody_analytic_po
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.sidelength_distributions.generate import get_sidelengths
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
-from nn_fourbody_potential.transformations import MinimumPermutationTransformer
-from nn_fourbody_potential.transformations import ReciprocalTransformer
-from nn_fourbody_potential.transformations import StandardizeTransformer
 from nn_fourbody_potential.transformations import apply_transformations
 
 import model_info
@@ -78,7 +75,7 @@ def main() -> None:
     params = model_info.get_training_parameters(training_data_filepath, data_transforms)
 
     model = RegressionMultilayerPerceptron(6, 1, params.layers)
-    model_filepath = model_info.get_saved_models_dirpath(params) / "nnpes_00099.pth"
+    model_filepath = model_info.get_saved_models_dirpath(params) / "nnpes_00499.pth"
 
     analytic_energies = get_analytic_energies(groups_of_points)
     model_energies = get_nn_model_energies(groups_of_points, model, model_filepath, data_transforms)

@@ -137,7 +137,7 @@ def test_model(
     model.load_state_dict(torch.load(modelfile))
     model.eval()
 
-    distrib = get_abinit_tetrahedron_distribution(2.2, 5.0)
+    distrib = get_abinit_tetrahedron_distribution(2.2, 4.5)
     potential = create_fourbody_analytic_potential()
     sidelengths_test, energies_test = generate_training_data(n_samples, distrib, potential)
 

@@ -1,0 +1,17 @@
+Seed: 0
+Layer sizes: [64, 128, 128, 64]
+Learning rate: 0.005000
+Weight decay: 0.000100
+Training data set size: 8901
+Total epochs: 500
+Batch size: 1000
+The transformations used are the following:
+
+ReciprocalTransformer()
+
+StandardizeTransformer(init_pair=(0.2222222222222222, 0.45454545454545453), final_pair=(0.0, 1.0), linear_func=<function StandardizeTransformer.__post_init__.<locals>.map_init_pair_to_final_pair at 0x7f4aecb88ca0>)
+
+MinimumPermutationTransformer(less_than_comparator=LessThanEpsilon(epsilon=0.0001))
+
+Other information:
+
