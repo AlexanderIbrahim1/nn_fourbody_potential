@@ -26,3 +26,6 @@ warn_unreachable = true
 warn_unused_configs = true
 no_implicit_reexport = true
 implicit_reexport = true
+
+[tool.black]
+line-length = 100
