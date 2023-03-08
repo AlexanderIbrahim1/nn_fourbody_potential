@@ -23,12 +23,15 @@ TODO:
   - I have settled on this optimizer
 
 - [] clean up the NN training pipeline
-  - create a separate subdirectory for each trained model
+  - [x] create a separate subdirectory for each trained model
     - there should be a README.md file inside that describes the model
-  - save the loss at each epoch into a file, so the trends are easier to see
+  - [x] save the loss at each epoch into a file, so the trends are easier to see
     - I also need this information for early stopping
-  - save the model at every n^th epoch
+  - [x] save the model at every n^th epoch
     - the .pth files don't seem to take up very much memory, so this is reasonable for now
+  - I need the training pipeline to be a bit more stable
+    - right now, there are errors with poor descriptions, and some lines have to be commented out, etc.
+    - there should be some more consistency
 
 - feed the "classical EOS geometries" into the training data
   - how does it affect the test error when used with the dummy PES?
