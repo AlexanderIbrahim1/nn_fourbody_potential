@@ -27,6 +27,8 @@ from nn_fourbody_potential.transformations import ReciprocalTransformer
 from nn_fourbody_potential.transformations import StandardizeTransformer
 from nn_fourbody_potential.transformations import apply_transformations
 
+import model_info
+
 
 FourCartesianPoints = Annotated[Sequence[Cartesian3D], 4]
 
@@ -56,14 +58,11 @@ def get_nn_model_energies(
     trans_sidelengths_data = np.empty((n_samples, n_sidelengths), dtype=float)
     for (i_sample, points) in enumerate(groups_of_points):
         sidelengths = get_sidelengths(points)
-        trans_sidelengths_data[i_sample] = apply_transformations(
-            sidelengths, data_transforms
-        )
+        trans_sidelengths_data[i_sample] = apply_transformations(sidelengths, data_transforms)
     trans_sidelengths_data = torch.from_numpy(trans_sidelengths_data.astype(np.float32))
 
     with torch.no_grad():
         energies = model(trans_sidelengths_data)
-
         return energies.numpy().reshape(n_samples, -1)
 
 
@@ -71,21 +70,18 @@ def main() -> None:
     geometry_tag = "1"
     geometry_func = MAP_GEOMETRY_TAG_TO_FUNCTION[geometry_tag]
 
-    lattice_constants = np.linspace(2.2, 6.0, 256)
+    lattice_constants = np.linspace(2.2, 5.0, 256)
     groups_of_points = [geometry_func(lat_const) for lat_const in lattice_constants]
 
-    model = RegressionMultilayerPerceptron(6, 1, [64, 128, 128, 64])
-    modelfile = Path(
-        ".",
-        "models",
-        "nn_pes_model_64_128_128_64_minpermute_reciprocal_lr0005_epoch500_batch1000_wdecay_00001_data5000.pth",
-    )
-    data_transforms = [MinimumPermutationTransformer(), ReciprocalTransformer()]
+    training_data_filepath = model_info.get_training_data_filepath()
+    data_transforms = model_info.get_data_transforms()
+    params = model_info.get_training_parameters(training_data_filepath, data_transforms)
+
+    model = RegressionMultilayerPerceptron(6, 1, params.layers)
+    model_filepath = model_info.get_saved_models_dirpath(params) / "nnpes_00099.pth"
 
     analytic_energies = get_analytic_energies(groups_of_points)
-    model_energies = get_nn_model_energies(
-        groups_of_points, model, modelfile, data_transforms
-    )
+    model_energies = get_nn_model_energies(groups_of_points, model, model_filepath, data_transforms)
 
     fig, ax = plt.subplots()
 
@@ -108,8 +104,8 @@ def main() -> None:
 
     fig.tight_layout()
 
-    # plt.show()
-    plt.savefig("neural_network_energy_example.png", dpi=400)
+    plt.show()
+    # plt.savefig("neural_network_energy_example.png", dpi=400)
 
 
 if __name__ == "__main__":

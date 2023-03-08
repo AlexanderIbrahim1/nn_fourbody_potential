@@ -13,23 +13,17 @@ from nn_fourbody_potential.dataset import PotentialDataset
 from nn_fourbody_potential.fourbody_potential import create_fourbody_analytic_potential
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.models import TrainingParameters
-from nn_fourbody_potential.sidelength_distributions import (
-    get_abinit_tetrahedron_distribution,
-)
+from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
 from nn_fourbody_potential.sidelength_distributions import generate_training_data
 
 from nn_fourbody_potential.modelio import ModelSaver
 from nn_fourbody_potential.modelio import write_training_parameters
 from nn_fourbody_potential.modelio import TestingErrorWriter
-from nn_fourbody_potential.modelio import model_directory_name
 
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
-from nn_fourbody_potential.transformations import ReciprocalTransformer
-from nn_fourbody_potential.transformations import MinimumPermutationTransformer
-from nn_fourbody_potential.transformations import StandardizeTransformer
-from nn_fourbody_potential.transformations import (
-    apply_transformations_to_sidelengths_data,
-)
+from nn_fourbody_potential.transformations import apply_transformations_to_sidelengths_data
+
+import model_info
 
 patch_typeguard()
 
@@ -91,7 +85,7 @@ def train_model(
     optimizer = torch.optim.Adam(
         model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay
     )
-    
+
     batch_to_datasize_ratio = params.batch_size / params.training_size
 
     for i_epoch in range(params.total_epochs):
@@ -107,7 +101,7 @@ def train_model(
             optimizer.zero_grad()
 
             current_loss += loss.item()
-        
+
         epoch_loss = current_loss * batch_to_datasize_ratio
 
         testing_error_writer.append(i_epoch, epoch_loss)
@@ -145,13 +139,9 @@ def test_model(
 
     distrib = get_abinit_tetrahedron_distribution(2.2, 5.0)
     potential = create_fourbody_analytic_potential()
-    sidelengths_test, energies_test = generate_training_data(
-        n_samples, distrib, potential
-    )
+    sidelengths_test, energies_test = generate_training_data(n_samples, distrib, potential)
 
-    sidelengths_test = apply_transformations_to_sidelengths_data(
-        sidelengths_test, data_transforms
-    )
+    sidelengths_test = apply_transformations_to_sidelengths_data(sidelengths_test, data_transforms)
     energies_test = add_dummy_dimension(energies_test)
 
     with torch.no_grad():
@@ -166,54 +156,24 @@ def test_model(
         print(f"mse = {mse: .12f}")
 
 
-def number_of_lines(file: Path) -> int:
-    with open(file, "r") as fin:
-        counter = 0
-        for _ in fin:
-            counter += 1
-
-        return counter
-
-
 if __name__ == "__main__":
-    min_sidelength = 2.2
-    max_sidelength = 5.0
-
-    traindata_filename = Path(".", "data", "training_data_5000_2.2_5.0.dat")
-
-    data_transforms = [
-        ReciprocalTransformer(),
-        StandardizeTransformer(
-            (1.0 / max_sidelength, 1.0 / min_sidelength), (0.0, 1.0)
-        ),
-        MinimumPermutationTransformer(),
-    ]
-
-    params = TrainingParameters(
-        seed=0,
-        layers=[16, 32, 32, 16],
-        learning_rate=5.0e-3,
-        weight_decay=1.0e-4,
-        training_size=number_of_lines(traindata_filename),
-        total_epochs=100,
-        batch_size=1000,
-        transformations=data_transforms,
-        other="",
-    )
-
-    modelpath = Path.cwd() / "models" / model_directory_name(
-        params.layers, params.learning_rate, params.training_size, other="nnpes"
-    )
-    #modelpath.mkdir()
-
-    training_parameters_file = modelpath / "training_parameters.dat"
-    #write_training_parameters(training_parameters_file, params)
+    training_data_filepath = model_info.get_training_data_filepath()
+    data_transforms = model_info.get_data_transforms()
+    params = model_info.get_training_parameters(training_data_filepath, data_transforms)
 
     model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, params.layers)
 
-    model_saver = ModelSaver(modelpath / "models")
+    modelpath = model_info.get_path_to_model(params)
+    if not modelpath.exists():
+        modelpath.mkdir()
 
-    #train_model(traindata_filename, params, model, modelpath, model_saver, 20)
+    training_parameters_filepath = model_info.get_training_parameters_filepath(params)
+    write_training_parameters(training_parameters_filepath, params, overwrite=False)
+
+    saved_models_dirpath = model_info.get_saved_models_dirpath(params)
+    model_saver = ModelSaver(saved_models_dirpath)
+
+    train_model(training_data_filepath, params, model, modelpath, model_saver, 20)
     test_model(
         model,
         model_saver.get_model_filename(params.total_epochs - 1),
