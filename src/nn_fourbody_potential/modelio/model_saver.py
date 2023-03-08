@@ -27,7 +27,13 @@ class ModelSaver:
         return Path(self.savepath, f"nnpes_{epoch:0>5d}.pth")
 
 
-def write_training_parameters(savepath: Path, params: TrainingParameters) -> None:
+def write_training_parameters(savepath: Path, params: TrainingParameters, overwrite: bool = False) -> None:
+    if savepath.exists() and not overwrite:
+        raise FileExistsError(
+            "The following file already exists:\n"
+            f"{savepath}\n"
+            "To overwrite an existing file, pass in 'overwrite=True'\n"
+        )
     
     csv_layers = ", ".join(str(layer) for layer in params.layers)
     repr_transformations = "\n\n".join([repr(trans) for trans in params.transformations])
