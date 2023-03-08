@@ -9,23 +9,64 @@ and the corresponding energy value.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Annotated
+from typing import Sequence
+from typing import Tuple
+
+import numpy as np
+
+from cartesian import CartesianND
+from cartesian.operations import relative_pair_distances
+from hydro4b_coords.geometries import MAP_GEOMETRY_TAG_TO_FUNCTION
 
 from nn_fourbody_potential.fourbody_potential import create_fourbody_analytic_potential
-from nn_fourbody_potential.sidelength_distributions import (
-    get_abinit_tetrahedron_distribution,
-)
+from nn_fourbody_potential.fourbody_potential import FourBodyAnalyticPotential
+from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
 from nn_fourbody_potential.sidelength_distributions import generate_training_data
+from nn_fourbody_potential.sidelength_distributions.generate import SixSideLengths
 
 from nn_fourbody_potential.dataio import save_fourbody_training_data
+
+FourCartesianPoints = Annotated[Sequence[CartesianND], 4]
+
+
+def generate_hcp_points() -> Sequence[FourCartesianPoints]:
+    """
+    Include the sidelengths and energies for all the four-body geometries calculated in
+    the investigation of the frozen HCP lattice.
+    """
+    eps = 1.0e-6  # so arange doesn't miss the last element
+    lattice_constants = np.arange(2.2, 4.5 + eps, 0.05)
+
+    groups_of_points = []
+    for point_creating_function in MAP_GEOMETRY_TAG_TO_FUNCTION.values():
+        groups_of_points.extend([point_creating_function(lc) for lc in lattice_constants])
+
+    return groups_of_points
+
+
+def generate_hcp_pes_data(
+    potential: FourBodyAnalyticPotential,
+) -> Tuple[Sequence[SixSideLengths], Sequence[float]]:
+    groups_of_points = generate_hcp_points()
+    sidelengths = np.array([relative_pair_distances(points) for points in groups_of_points])
+    energies = np.array([potential(points) for points in groups_of_points])
+
+    return sidelengths, energies
 
 
 def main() -> None:
     n_samples = 5000
-    distrib = get_abinit_tetrahedron_distribution(2.2, 5.0)
+    distrib = get_abinit_tetrahedron_distribution(2.2, 4.5)
     potential = create_fourbody_analytic_potential()
-    filename = Path("data", f"training_data_{n_samples}_2.2_5.0.dat")
 
-    sidelengths, energies = generate_training_data(n_samples, distrib, potential)
+    dist_sidelengths, dist_energies = generate_training_data(n_samples, distrib, potential)
+    hcp_sidelengths, hcp_energies = generate_hcp_pes_data(potential)
+
+    sidelengths = np.concatenate((dist_sidelengths, hcp_sidelengths))
+    energies = np.concatenate((dist_energies, hcp_energies))
+
+    filename = Path("data", f"training_data_{len(sidelengths)}_2.2_4.5.dat")
     save_fourbody_training_data(filename, sidelengths, energies)
 
 
