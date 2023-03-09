@@ -46,6 +46,7 @@ def write_training_parameters(savepath: Path, params: TrainingParameters, overwr
         fout.write(f"Training data set size: {params.training_size}\n")
         fout.write(f"Total epochs: {params.total_epochs}\n")
         fout.write(f"Batch size: {params.batch_size}\n")
+        fout.write(f"Batch normalization applied: {params.apply_batch_norm}\n")
         fout.write(f"The transformations used are the following:\n\n{repr_transformations}\n")
         fout.write('\n')
         fout.write(f"Other information:\n{params.other}\n")

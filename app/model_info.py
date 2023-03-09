@@ -44,21 +44,23 @@ def get_training_parameters(
 ) -> TrainingParameters:
     return TrainingParameters(
         seed=0,
-        layers=[64, 128, 128, 64],
-        learning_rate=5.0e-3,
+        #layers=[64, 128, 128, 64],
+        layers=[128, 256, 256, 128],
+        learning_rate=1.0e-4,
         weight_decay=1.0e-4,
         training_size=number_of_lines(training_data_filepath),
         total_epochs=500,
         batch_size=1000,
         transformations=data_transforms,
-        other="",
+        apply_batch_norm=True,
+        other="_batchnorm_",
     )
 
 
 def get_path_to_model(params: TrainingParameters) -> Path:
     base_models_path = Path.cwd() / "models"
     specific_model_dir = model_directory_name(
-        params.layers, params.learning_rate, params.training_size, other="nnpes"
+        params.layers, params.learning_rate, params.training_size, other=f"nnpes{params.other}"
     )
 
     return base_models_path / specific_model_dir
