@@ -64,7 +64,7 @@ def get_nn_model_energies(
 
 
 def main() -> None:
-    geometry_tag = "1"
+    geometry_tag = "sqrt2_sqrt3"
     geometry_func = MAP_GEOMETRY_TAG_TO_FUNCTION[geometry_tag]
 
     lattice_constants = np.linspace(2.2, 5.0, 256)
@@ -75,7 +75,8 @@ def main() -> None:
     params = model_info.get_training_parameters(training_data_filepath, data_transforms)
 
     model = RegressionMultilayerPerceptron(6, 1, params.layers)
-    model_filepath = model_info.get_saved_models_dirpath(params) / "nnpes_00499.pth"
+    #model_filepath = model_info.get_saved_models_dirpath(params) / "nnpes_00499.pth"
+    model_filepath = model_info.get_saved_models_dirpath(params) / "nnpes_00480.pth"
 
     analytic_energies = get_analytic_energies(groups_of_points)
     model_energies = get_nn_model_energies(groups_of_points, model, model_filepath, data_transforms)

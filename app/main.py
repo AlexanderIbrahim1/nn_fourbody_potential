@@ -154,6 +154,7 @@ def test_model(
         y_estim.detach()
         mse = calculate_mse(y_test, y_estim)
         print(f"mse = {mse: .12f}")
+        print(f"rmse = {np.sqrt(mse): .12f}")
 
 
 if __name__ == "__main__":
@@ -168,15 +169,16 @@ if __name__ == "__main__":
         modelpath.mkdir()
 
     training_parameters_filepath = model_info.get_training_parameters_filepath(params)
-    write_training_parameters(training_parameters_filepath, params, overwrite=False)
 
     saved_models_dirpath = model_info.get_saved_models_dirpath(params)
     model_saver = ModelSaver(saved_models_dirpath)
 
+    write_training_parameters(training_parameters_filepath, params, overwrite=False)
     train_model(training_data_filepath, params, model, modelpath, model_saver, 20)
     test_model(
         model,
-        model_saver.get_model_filename(params.total_epochs - 1),
+        model_saver.get_model_filename(params.total_epochs-1),
+        #model_saver.get_model_filename(480),
         50000,
         data_transforms,
     )
