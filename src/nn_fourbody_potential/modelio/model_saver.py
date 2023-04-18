@@ -1,4 +1,3 @@
-
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -34,11 +33,11 @@ def write_training_parameters(savepath: Path, params: TrainingParameters, overwr
             f"{savepath}\n"
             "To overwrite an existing file, pass in 'overwrite=True'\n"
         )
-    
+
     csv_layers = ", ".join(str(layer) for layer in params.layers)
     repr_transformations = "\n\n".join([repr(trans) for trans in params.transformations])
-    
-    with open(savepath, 'w') as fout:
+
+    with open(savepath, "w") as fout:
         fout.write(f"Seed: {params.seed}\n")
         fout.write(f"Layer sizes: [{csv_layers}]\n")
         fout.write(f"Learning rate: {params.learning_rate:.6f}\n")
@@ -48,5 +47,5 @@ def write_training_parameters(savepath: Path, params: TrainingParameters, overwr
         fout.write(f"Batch size: {params.batch_size}\n")
         fout.write(f"Batch normalization applied: {params.apply_batch_norm}\n")
         fout.write(f"The transformations used are the following:\n\n{repr_transformations}\n")
-        fout.write('\n')
+        fout.write("\n")
         fout.write(f"Other information:\n{params.other}\n")
