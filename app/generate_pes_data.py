@@ -18,14 +18,13 @@ import numpy as np
 from cartesian import CartesianND
 from cartesian.operations import relative_pair_distances
 from hydro4b_coords.geometries import MAP_GEOMETRY_TAG_TO_FUNCTION
+from hydro4b_coords.generate.generate import sample_fourbody_geometry
 
-from nn_fourbody_potential.fourbody_potential import create_fourbody_analytic_potential
+from nn_fourbody_potential.dataio import save_fourbody_sidelengths
 from nn_fourbody_potential.fourbody_potential import FourBodyAnalyticPotential
 from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
-from nn_fourbody_potential.sidelength_distributions import generate_training_data
+from nn_fourbody_potential.sidelength_distributions import get_sidelengths
 from nn_fourbody_potential.sidelength_distributions.generate import SixSideLengths
-
-from nn_fourbody_potential.dataio import save_fourbody_training_data
 
 FourCartesianPoints = Annotated[Sequence[CartesianND], 4]
 
@@ -56,18 +55,21 @@ def generate_hcp_pes_data(
 
 
 def main() -> None:
-    n_samples = 5000
+    n_samples = 2000
     distrib = get_abinit_tetrahedron_distribution(2.2, 4.5)
-    potential = create_fourbody_analytic_potential()
 
-    dist_sidelengths, dist_energies = generate_training_data(n_samples, distrib, potential)
-    hcp_sidelengths, hcp_energies = generate_hcp_pes_data(potential)
+    dist_points = [sample_fourbody_geometry(distrib) for _ in range(n_samples)]
+    dist_sidelengths = np.array([get_sidelengths(pts) for pts in dist_points])
+    # hcp_sidelengths, hcp_energies = generate_hcp_pes_data(potential)
 
-    sidelengths = np.concatenate((dist_sidelengths, hcp_sidelengths))
-    energies = np.concatenate((dist_energies, hcp_energies))
+    # potential = create_fourbody_analytic_potential()
+    # dist_energies = np.array([potential(pts) for pts in dist_points])
 
-    filename = Path("data", f"training_data_{len(sidelengths)}_2.2_4.5.dat")
-    save_fourbody_training_data(filename, sidelengths, energies)
+    # sidelengths = np.concatenate((dist_sidelengths, hcp_sidelengths))
+    sidelengths = dist_sidelengths
+
+    filename = Path("data", f"sample_sidelengths_{len(sidelengths)}_2.2_4.5.dat")
+    save_fourbody_sidelengths(filename, sidelengths)
 
 
 if __name__ == "__main__":

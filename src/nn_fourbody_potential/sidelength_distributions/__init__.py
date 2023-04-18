@@ -3,5 +3,5 @@ from nn_fourbody_potential.sidelength_distributions.abinit_tetrahedron_distribut
 )
 
 from nn_fourbody_potential.sidelength_distributions.generate import (
-    generate_training_data,
+    get_sidelengths,
 )
