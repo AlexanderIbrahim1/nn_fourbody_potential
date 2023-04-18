@@ -17,7 +17,8 @@ patch_typeguard()
 # dataclass in Python 3.9 doesn't have support for keyword-only parameters, so I have to
 # write out the entire constructor
 class TrainingParameters:
-    def __init__(self,
+    def __init__(
+        self,
         seed: int,
         layers: list[int],
         learning_rate: float,
@@ -51,9 +52,7 @@ class RegressionMultilayerPerceptron(torch.nn.Module):
         self._layer_sizes = [n_features] + hidden_layer_sizes + [n_outputs]
         self.layers = _create_linear_sequential(self._layer_sizes, apply_batch_norm)
 
-    def forward(
-        self, x: TensorType["batch", "features"]
-    ) -> TensorType["batch", "outputs"]:
+    def forward(self, x: TensorType["batch", "features"]) -> TensorType["batch", "outputs"]:
         return self.layers(x)
 
     @property

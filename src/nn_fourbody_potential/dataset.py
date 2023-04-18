@@ -25,7 +25,5 @@ class PotentialDataset(Dataset):
     def __len__(self) -> int:
         return len(self.x)
 
-    def __getitem__(
-        self, index
-    ) -> Tuple[TensorType["features"], TensorType["outputs"]]:
+    def __getitem__(self, index) -> Tuple[TensorType["features"], TensorType["outputs"]]:
         return (self.x[index], self.y[index])
