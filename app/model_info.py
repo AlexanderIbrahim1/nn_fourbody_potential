@@ -17,15 +17,19 @@ from nn_fourbody_potential.transformations import StandardizeTransformer
 
 def number_of_lines(file: Path) -> int:
     with open(file, "r") as fin:
-        counter = 0
-        for _ in fin:
-            counter += 1
-
-        return counter
+        return sum([1 for _ in fin])
 
 
 def get_training_data_filepath() -> Path:
-    return Path(".", "data", "training_data_8901_2.2_4.5.dat")
+    return Path(".", "data", "abinitio_training_data_8901_2.2_4.5.dat")
+
+
+def get_validation_data_filepath() -> Path:
+    return Path(".", "data", "abinitio_validation_data_2000_2.2_4.5.dat")
+
+
+def get_testing_data_filepath() -> Path:
+    return Path(".", "data", "abinitio_testing_data_2000_2.2_4.5.dat")
 
 
 def get_data_transforms() -> list[SixSideLengthsTransformer]:
@@ -44,16 +48,15 @@ def get_training_parameters(
 ) -> TrainingParameters:
     return TrainingParameters(
         seed=0,
-        #layers=[64, 128, 128, 64],
-        layers=[128, 256, 256, 128],
-        learning_rate=1.0e-4,
+        layers=[64, 128, 128, 64],
+        learning_rate=1.0e-3,
         weight_decay=1.0e-4,
         training_size=number_of_lines(training_data_filepath),
-        total_epochs=500,
-        batch_size=1000,
+        total_epochs=1000,
+        batch_size=2000,
         transformations=data_transforms,
         apply_batch_norm=True,
-        other="_batchnorm_",
+        other="_abinitio_batchnorm",
     )
 
 
