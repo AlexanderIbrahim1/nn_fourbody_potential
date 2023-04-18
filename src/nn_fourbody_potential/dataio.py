@@ -24,7 +24,7 @@ def save_fourbody_training_data(
 
     with open(filename, "w") as fout:
         for (sidelen, energy) in zip(sidelengths, energies):
-            fout.write(_format_line(sidelen, energy))
+            fout.write(_format_data_line(sidelen, energy))
 
 
 def load_fourbody_training_data(
@@ -42,21 +42,39 @@ def load_fourbody_training_data(
     return sidelengths, energies
 
 
-def _format_line(sidelengths: Tuple[float, ...], energy: float) -> str:
-    line = ""
-    for sidelen in sidelengths:
-        line += f"{sidelen: .12e}   "
-    line += f"{energy: .12e}\n"
+def save_fourbody_sidelengths(filename: Path, sidelengths: np.ndarray[float, float]) -> None:
+    """The sidelength data is saved as rows of 6 space-separated values."""
+    assert sidelengths.shape == (len(sidelengths), len(SIDELENGTH_COLUMNS))
 
-    return line
+    with open(filename, "w") as fout:
+        for sidelen in sidelengths:
+            fout.write(_format_sidelength_line(sidelen))
 
 
-def _check_training_data_dimensions(
-    sidelengths: np.ndarray[float, float], energies: np.ndarray[float]
-) -> None:
+def load_fourbody_sidelengths(
+    filename: Path,
+) -> np.ndarray[float, float]:
+    """This light wrapper function exists to keep the API consistent."""
+    return np.loadtxt(filename, usecols=SIDELENGTH_COLUMNS)
+
+
+def _format_data_line(sidelengths: Tuple[float, ...], energy: float) -> str:
+    delimiter = "   "
+    formatted_sidelengths = [f"{s: .12e}" for s in sidelengths]
+    formatted_energy = f"{energy: .12e}\n"
+    return delimiter.join(formatted_sidelengths) + delimiter + formatted_energy
+
+
+def _check_training_data_dimensions(sidelengths: np.ndarray[float, float], energies: np.ndarray[float]) -> None:
     """Performs a sanity check on the dimensions of the training data."""
     assert len(sidelengths) == len(energies)
 
     n_samples = len(sidelengths)
     assert sidelengths.shape == (n_samples, len(SIDELENGTH_COLUMNS))
     assert energies.shape == (n_samples,)
+
+
+def _format_sidelength_line(sidelengths: Tuple[float, ...]) -> str:
+    delimiter = "   "
+    formatted_sidelengths = [f"{s: .12e}" for s in sidelengths]
+    return delimiter.join(formatted_sidelengths) + '\n'
