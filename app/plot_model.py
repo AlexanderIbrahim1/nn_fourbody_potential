@@ -5,6 +5,7 @@ coordinate space. The PESs can be a NN PES, or the analytic PES.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Annotated
 from typing import Optional
@@ -22,7 +23,7 @@ from nn_fourbody_potential.fourbody_potential import create_fourbody_analytic_po
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.sidelength_distributions.generate import get_sidelengths
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
-from nn_fourbody_potential.transformations import apply_transformations
+from nn_fourbody_potential.transformations import transform_sidelengths_data
 
 import model_info
 
@@ -49,25 +50,22 @@ def get_nn_model_energies(
     model.load_state_dict(torch.load(modelfile))
     model.eval()
 
-    n_sidelengths = 6
-    n_samples = len(groups_of_points)
-
-    trans_sidelengths_data = np.empty((n_samples, n_sidelengths), dtype=float)
-    for (i_sample, points) in enumerate(groups_of_points):
-        sidelengths = get_sidelengths(points)
-        trans_sidelengths_data[i_sample] = apply_transformations(sidelengths, data_transforms)
+    sidelengths = np.array([get_sidelengths(points) for points in groups_of_points])
+    trans_sidelengths_data = transform_sidelengths_data(sidelengths, data_transforms)
     trans_sidelengths_data = torch.from_numpy(trans_sidelengths_data.astype(np.float32))
 
     with torch.no_grad():
         energies = model(trans_sidelengths_data)
+        n_samples = len(energies)
         return energies.numpy().reshape(n_samples, -1)
 
 
-def main() -> None:
-    geometry_tag = "sqrt2_sqrt3"
+# TODO: when comparing the ab initio energies, I need to switch back to getting curves for the ab initio potential
+def main(i_epoch: int) -> None:
+    geometry_tag = "sqrt2"
     geometry_func = MAP_GEOMETRY_TAG_TO_FUNCTION[geometry_tag]
 
-    lattice_constants = np.linspace(2.2, 5.0, 256)
+    lattice_constants = np.linspace(2.2, 5.0, 2048)
     groups_of_points = [geometry_func(lat_const) for lat_const in lattice_constants]
 
     training_data_filepath = model_info.get_training_data_filepath()
@@ -75,8 +73,7 @@ def main() -> None:
     params = model_info.get_training_parameters(training_data_filepath, data_transforms)
 
     model = RegressionMultilayerPerceptron(6, 1, params.layers)
-    #model_filepath = model_info.get_saved_models_dirpath(params) / "nnpes_00499.pth"
-    model_filepath = model_info.get_saved_models_dirpath(params) / "nnpes_00480.pth"
+    model_filepath = model_info.get_saved_models_dirpath(params) / f"nnpes_{i_epoch:0>5d}.pth"
 
     analytic_energies = get_analytic_energies(groups_of_points)
     model_energies = get_nn_model_energies(groups_of_points, model, model_filepath, data_transforms)
@@ -107,7 +104,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(int(sys.argv[1]))
 
 #    standardized_transformer = StandardizeTransformer((2.2, 10.0), (1.0, 2.0))
 #    s = (2.2, 2.5, 2.8, 3.4, 5.5, 10.0)
