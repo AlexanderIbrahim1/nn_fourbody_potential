@@ -39,7 +39,7 @@ def create_fourbody_analytic_potential() -> FourBodyAnalyticPotential:
     # distance by the number of sidelengths
     n_sidelengths = constants.NUMBER_OF_SIDELENGTHS_FOURBODY
     atten_r_cutoff = constants.ABINIT_TETRAHEDRON_ATTENUATION_R_CUTOFF * n_sidelengths
-    atten_expon_coeff = constants.ABINIT_TETRAHEDRON_ATTENUATION_EXPON
+    atten_expon_coeff = constants.ABINIT_TETRAHEDRON_ATTENUATION_EXPON * n_sidelengths
 
     atten_function = SilveraGoldmanAttenuation(atten_r_cutoff, atten_expon_coeff)
     short_long_atten = DistanceParameterFunction(atten_function, sum_of_sidelengths)

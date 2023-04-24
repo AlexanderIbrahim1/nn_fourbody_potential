@@ -165,15 +165,17 @@ if __name__ == "__main__":
     model_saver = ModelSaver(saved_models_dirpath)
     last_model_filename = model_saver.get_model_filename(params.total_epochs - 1)
 
-    write_training_parameters(training_parameters_filepath, params, overwrite=False)
-    train_model(
-        training_data_filepath,
-        validation_data_filepath,
-        params,
-        model,
-        modelpath,
-        model_saver,
-        save_every=20,
-    )
+#    write_training_parameters(training_parameters_filepath, params, overwrite=False)
+#    train_model(
+#        training_data_filepath,
+#        validation_data_filepath,
+#        params,
+#        model,
+#        modelpath,
+#        model_saver,
+#        save_every=20,
+#    )
 
-    test_model(model, last_model_filename, params, transforms)
+    test_loss = test_model(model, last_model_filename, params, testing_data_filepath)
+    print(f"test loss mse = {test_loss}")
+    print(f"test loss rmse = {np.sqrt(test_loss)}")

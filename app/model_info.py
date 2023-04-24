@@ -52,11 +52,11 @@ def get_training_parameters(
         learning_rate=2.0e-4,
         weight_decay=1.0e-4,
         training_size=number_of_lines(training_data_filepath),
-        total_epochs=1000,
+        total_epochs=3000,
         batch_size=2000,
         transformations=data_transforms,
         apply_batch_norm=False,
-        other="_0",
+        other="_initial",
     )
 
 
