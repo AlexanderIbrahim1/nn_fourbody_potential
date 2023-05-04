@@ -9,15 +9,10 @@ and the corresponding energy value.
 from __future__ import annotations
 
 from itertools import combinations
-from typing import Annotated
-from typing import Sequence
-from typing import Tuple
-
-from cartesian import Cartesian3D
 from cartesian.measure import distance
 
-FourCartesianPoints = Annotated[Sequence[Cartesian3D], 4]
-SixSideLengths = Tuple[float, float, float, float, float, float]
+from nn_fourbody_potential.sidelength_distributions.sidelength_types import FourCartesianPoints
+from nn_fourbody_potential.sidelength_distributions.sidelength_types import SixSideLengths
 
 
 def get_sidelengths(points: FourCartesianPoints) -> SixSideLengths:

@@ -24,7 +24,7 @@ from nn_fourbody_potential.dataio import save_fourbody_sidelengths
 from nn_fourbody_potential.fourbody_potential import FourBodyAnalyticPotential
 from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
 from nn_fourbody_potential.sidelength_distributions import get_sidelengths
-from nn_fourbody_potential.sidelength_distributions.generate import SixSideLengths
+from nn_fourbody_potential.sidelength_distributions import SixSideLengths
 
 FourCartesianPoints = Annotated[Sequence[CartesianND], 4]
 
