@@ -1,5 +1,3 @@
-import numpy as np
-
 # fmt: off
 from dispersion4b.coefficients import c12_parahydrogen_midzuno_kihara
 
