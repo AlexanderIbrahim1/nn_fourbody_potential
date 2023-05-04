@@ -1,10 +1,51 @@
 # PLAN
 
+## 2023-05-04
+
+### Add short-range and long-range extrapolations
+
+- Long-range
+- take a linear combination of the NNPES energy and the dispersion energy
+  - also use the same "connecting function" that the SG potential used (with different parameters)
+    - maybe the decay should be much faster, because the NNPES energy converges fairly quickly to the long-range energy anyways?
+
+- Short-range
+- do what was done in the 3BPES paper
+  - assume that the four-body interaction energy varies exponentially with the scaling of all 6 side lengths
+  - if a 6-tuple input has side lengths that are too small:
+    - get three inputs with side lengths in the training domain
+    - calculate energies for these three inputs
+    - perform an exponential extrapolation to the small input
+  - if the exponential increase is too drastic, switch to a linear extrapolation
+- this is more complicated, and requires a buffering system
+  - because the inputs to the NN, and the outputs, no longer match 1-to-1, if 3 inputs are needed for a single energy
+
+### Get PyTorch working on graham/cedar
+
+- there are instructions for how to do this on computecanada's website (or whatever it is called now)
+  - I should bring a few of the .xyz files locally first
+    - this lets me work on them here, which is faster
+    - then I can just git clone the potential on the remote server, and get it working right away
+
+### Prune the amount of data involved in training
+
+- there are lots of sample energies in the training data that are very weak
+  - this slows down training, and makes the NN adjust its weights for configurations that barely matter
+  - I need to cut down the amount of training data, then retrain
+
+### Get more training data for short-range interaction energies
+
+- the short-range interaction energies are the most important ones for my purposes
+  - I need to get some more, and then retrain
+
 ## 2023-02-24
+
 Right now, I'm able to train the MLP
+
 - I'm still far from a model that I'm happy with
 
 TODO:
+
 - [x] plot the NN PES and the analytic PES along different paths in coordinate space
   - right now, all I have is the test error to go off of
   - maybe the NN PES is complete nonsense?
@@ -22,7 +63,7 @@ TODO:
 - [x] the Adam optimizer is probably fine
   - I have settled on this optimizer
 
-- [] clean up the NN training pipeline
+- [x] clean up the NN training pipeline
   - [x] create a separate subdirectory for each trained model
     - there should be a README.md file inside that describes the model
   - [x] save the loss at each epoch into a file, so the trends are easier to see
@@ -42,4 +83,3 @@ TODO:
 
 - increasing the model's size does seem to help
   - keep trying deeper and wider models, and see how far the test error can go down!
-
