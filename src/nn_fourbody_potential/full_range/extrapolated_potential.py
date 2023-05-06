@@ -62,4 +62,3 @@ class ExtrapolatedPotential:
                 # feed in the 1 sample
                 batch_index_counter += 1
                 pass
-
