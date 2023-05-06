@@ -1,4 +1,4 @@
-f"""
+"""
 The InteractionRange enum and its related functions are used to classify each four-body
 geometry as being short-range, mid-range, or long-range. These classifications are used
 to determine how a sample is treated.
@@ -7,7 +7,8 @@ to determine how a sample is treated.
 import enum
 
 from nn_fourbody_potential.sidelength_distributions import SixSideLengths
-from nn_fourbody_potential.models import RegressionMultilayerPerceptron
+from nn_fourbody_potential.full_range.constants import SHORT_RANGE_DISTANCE_CUTOFF
+from nn_fourbody_potential.full_range.constants import LONG_RANGE_SUM_OF_SIDELENGTHS_CUTOFF
 
 
 class InteractionRange(enum.Enum):
@@ -41,12 +42,8 @@ def classify_interaction_range(
 
 
 def _is_short_range_sample(sample: SixSideLengths) -> bool:
-    short_range_distance_cutoff = 2.2
-    return any([s < short_range_distance_cutoff for s in sample])
+    return any([s < SHORT_RANGE_DISTANCE_CUTOFF for s in sample])
 
 
 def _is_long_range_sample(sample: SixSideLengths) -> bool:
-    n_sidelengths = len(sample)
-    long_range_sum_of_sidelengths_cutoff = 3.5 * n_sidelengths
-
-    return sum(sample) > long_range_sum_of_sidelengths_cutoff
+    return sum(sample) > LONG_RANGE_SUM_OF_SIDELENGTHS_CUTOFF
