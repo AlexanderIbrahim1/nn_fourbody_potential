@@ -26,15 +26,52 @@ energy for parahydrogen, incorporating possible short-range or long-range adjust
 # TODO:
 # - put the `short_range_distance_cutoff` and the `long_range_sum_of_sidelength_cutoff` somewhere as global constants?
 
+from __future__ import annotations
+
+from typing import Generic
 from typing import Sequence
+from typing import TypeVar
+from typing import Union
 
 import numpy as np
+from nn_fourbody_potential.full_range.constants import SHORT_RANGE_DISTANCE_CUTOFF
+from nn_fourbody_potential.full_range.constants import SHORT_RANGE_SCALING_STEP
 
 from nn_fourbody_potential.sidelength_distributions import SixSideLengths
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.full_range.interaction_range import InteractionRange
 from nn_fourbody_potential.full_range.interaction_range import classify_interaction_range
 from nn_fourbody_potential.full_range.interaction_range import interaction_range_size_allocation
+from nn_fourbody_potential.full_range.short_range import prepare_short_range_extrapolation_data
+from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExtrapolationDistanceInfo
+
+
+T = TypeVar('T')
+class ReservedVector(Generic[T]):
+    def __init__(self, n_elements: Union[int, Sequence[int]], type_t: T) -> None:
+        """
+        NOTE: I cannot set `dtype=T` for the numpy array because it will throw an error such as
+            `TypeError: Cannot interpret '~T' as a data type`
+        This is why the `type_t` variable must be redundantly passed into the constructor
+        
+        """
+        if n_elements < 0:
+            raise ValueError("Cannot reserve a negative number of elements.")
+        
+        self._elements = np.empty(n_elements, dtype=type_t)
+        self._i_elem = 0
+    
+    def push_back(self, elem: T) -> None:
+        if self._i_elem >= self._elements.size:
+            raise IndexError("Cannot push back an element beyond the reserved range.")
+        
+        self._elements[self._i_elem] = elem
+        self._i_elem += 1
+    
+    @property
+    def elements(self) -> np.ndarray[T]:
+        return self._elements
+        
 
 
 class ExtrapolatedPotential:
@@ -44,21 +81,26 @@ class ExtrapolatedPotential:
     def evaluate_batch(self, samples: Sequence[SixSideLengths]) -> Sequence[float]:
         interaction_ranges = [classify_interaction_range(sample) for sample in samples]
 
-        total_size_allocation = sum(
-            [interaction_range_size_allocation(interact_range) for interact_range in interaction_ranges]
-        )
+        total_size_allocation = sum([interaction_range_size_allocation(ir) for ir in interaction_ranges])
+        batch_sidelengths = ReservedVector[np.float32](total_size_allocation, np.float32)
+        
+        n_short_range = sum([1 for ir in interaction_ranges if ir == InteractionRange.SHORT_RANGE])
+        distance_infos = ReservedVector[ExtrapolationDistanceInfo](n_short_range, ExtrapolationDistanceInfo)
 
-        batch_index_counter = 0
-
-        batch_sidelengths = np.empty((total_size_allocation, 6), dtype=np.float32)
         for (sample, interact_range) in zip(samples, interaction_ranges):
             if interact_range == InteractionRange.SHORT_RANGE:
-                # feed in the 3 modified samples
-                batch_index_counter += 3
-                pass
+                extrap_sidelengths, extrap_distance_info = prepare_short_range_extrapolation_data(sample, SHORT_RANGE_SCALING_STEP, SHORT_RANGE_DISTANCE_CUTOFF)
+                batch_sidelengths.push_back(extrap_sidelengths.lower)
+                batch_sidelengths.push_back(extrap_sidelengths.upper)
+                distance_infos.push_back(extrap_distance_info)
             elif interact_range == InteractionRange.LONG_RANGE:
                 continue
             else:
-                # feed in the 1 sample
-                batch_index_counter += 1
-                pass
+                batch_sidelengths.push_back(sample)
+
+        # feed the batches into the neural network
+        
+        # loop over samples and interact_range pairs
+        # allocate memory for the final array of floats
+        # get the energy depending on short-range, mid-range, long-range
+        # need to keep track of the indices here!!!
