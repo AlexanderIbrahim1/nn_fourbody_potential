@@ -22,7 +22,7 @@ def interaction_range_size_allocation(interact_range: InteractionRange) -> int:
     provided aren't always the samples that are fed into the neural network. This function finds
     out how many samples must be fed into the neural network to calculate a certain energy."""
     if interact_range == InteractionRange.SHORT_RANGE:
-        return 3
+        return 2
     elif interact_range == InteractionRange.LONG_RANGE:
         return 0
     else:
