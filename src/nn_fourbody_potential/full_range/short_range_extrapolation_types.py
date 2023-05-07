@@ -31,9 +31,9 @@ class ExtrapolationSideLengths:
 
 @dataclass
 class ExtrapolationDistanceInfo:
+    r_short_range: float
     r_lower: float
     r_upper: float
-    r_short_range: float
 
     def delta_r(self) -> float:
         return self.r_upper - self.r_lower
