@@ -57,7 +57,7 @@ def _is_different_sign(energies_lower: float, energies_upper: float) -> bool:
     return energies_lower * energies_upper <= 0.0
 
 
-def prepare_extrapolation_data(
+def prepare_short_range_extrapolation_data(
     short_range_sample: SixSideLengths,
     scaling_step: float,
     short_range_cutoff: float,
@@ -70,7 +70,7 @@ def prepare_extrapolation_data(
 
     sidelength_lower = short_range_cutoff
     sidelength_upper = short_range_cutoff + scaling_step
-    extrap_distance_info = ExtrapolationDistanceInfo(sidelength_lower, sidelength_upper, sidelength_shortest)
+    extrap_distance_info = ExtrapolationDistanceInfo(sidelength_shortest, sidelength_lower, sidelength_upper)
 
     scaling_ratio_lower = sidelength_lower / sidelength_shortest
     scaling_ratio_upper = sidelength_upper / sidelength_shortest
