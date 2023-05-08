@@ -7,7 +7,6 @@ import numpy as np
 
 import torch
 from torch.utils.data import DataLoader
-from torchtyping import patch_typeguard
 
 from nn_fourbody_potential.dataio import load_fourbody_training_data
 from nn_fourbody_potential.dataset import PotentialDataset
@@ -21,8 +20,6 @@ from nn_fourbody_potential.modelio import ErrorWriter
 from nn_fourbody_potential.transformations import transform_sidelengths_data
 
 import model_info
-
-patch_typeguard()
 
 N_FEATURES = 6
 N_OUTPUTS = 1

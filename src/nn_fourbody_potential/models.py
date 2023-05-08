@@ -5,14 +5,9 @@ TODO: turn asserts into exceptions
 """
 
 import torch
-from torchtyping import TensorType
-from torchtyping import patch_typeguard
-from typeguard import typechecked
 
 from nn_fourbody_potential.transformations.transformers import SixSideLengthsTransformer
 
-
-patch_typeguard()
 
 # dataclass in Python 3.9 doesn't have support for keyword-only parameters, so I have to
 # write out the entire constructor
@@ -42,7 +37,6 @@ class TrainingParameters:
         self.other = other
 
 
-@typechecked
 class RegressionMultilayerPerceptron(torch.nn.Module):
     def __init__(
         self, n_features: int, n_outputs: int, hidden_layer_sizes: list[int], apply_batch_norm: bool = False
@@ -52,7 +46,7 @@ class RegressionMultilayerPerceptron(torch.nn.Module):
         self._layer_sizes = [n_features] + hidden_layer_sizes + [n_outputs]
         self.layers = _create_linear_sequential(self._layer_sizes, apply_batch_norm)
 
-    def forward(self, x: TensorType["batch", "features"]) -> TensorType["batch", "outputs"]:
+    def forward(self, x):
         return self.layers(x)
 
     @property
