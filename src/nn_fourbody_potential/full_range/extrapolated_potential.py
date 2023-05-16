@@ -29,6 +29,7 @@ from nn_fourbody_potential.full_range.interaction_range import InteractionRange
 from nn_fourbody_potential.full_range.interaction_range import classify_interaction_range
 from nn_fourbody_potential.full_range.interaction_range import interaction_range_size_allocation
 from nn_fourbody_potential.full_range.long_range import LongRangeEnergyCorrector
+from nn_fourbody_potential.full_range.reserved_vector import ReservedVector
 from nn_fourbody_potential.full_range.short_range import prepare_short_range_extrapolation_data
 from nn_fourbody_potential.full_range.short_range import short_range_energy_extrapolation
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExtrapolationDistanceInfo
@@ -36,39 +37,6 @@ from nn_fourbody_potential.full_range.short_range_extrapolation_types import Ext
 
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations import transform_sidelengths_data
-
-
-T = TypeVar("T")
-
-
-class ReservedVector(Generic[T]):
-    def __init__(self, shape: Union[int, Sequence[int]], type_t: T) -> None:
-        """
-        NOTE: I cannot set `dtype=T` for the numpy array because it will throw an error such as
-            `TypeError: Cannot interpret '~T' as a data type`
-        This is why the `type_t` variable must be redundantly passed into the constructor
-
-        """
-        self._elements = np.empty(shape, dtype=type_t)
-        self._i_elem = 0
-
-    def push_back(self, elem: T) -> None:
-        if self._i_elem >= self._elements.size:
-            raise IndexError("Cannot push back an element beyond the reserved range.")
-
-        self._elements[self._i_elem] = elem
-        self._i_elem += 1
-
-    @property
-    def elements(self) -> np.ndarray[T]:
-        return self._elements
-
-    @property
-    def size(self) -> int:
-        return self._elements.size
-
-    def __getitem__(self, index: int) -> T:
-        return self._elements[index]
 
 
 class ExtrapolatedPotential:
@@ -79,21 +47,27 @@ class ExtrapolatedPotential:
     ) -> None:
         self._neural_network = neural_network
         self._transformers = transformers
+        self._long_range_corrector = LongRangeEnergyCorrector()
 
         self._neural_network.eval()
-
-    def evaluate_batch(self, samples: Sequence[SixSideLengths]) -> Sequence[float]:
-        interaction_ranges = [classify_interaction_range(sample) for sample in samples]
-
+    
+    def _allocate_batch_sidelengths(self, interaction_ranges: Sequence[InteractionRange]) -> ReservedVector[np.float32]:
         total_size_allocation = sum([interaction_range_size_allocation(ir) for ir in interaction_ranges])
         n_sidelengths = 6
         sidelengths_shape = (total_size_allocation, n_sidelengths)
-        batch_sidelengths = ReservedVector[np.float32](sidelengths_shape, np.float32)
+        
+        return ReservedVector[np.float32](sidelengths_shape, np.float32)
 
+    def _allocate_distance_infos(self, interaction_ranges: Sequence[InteractionRange]) -> ReservedVector[ExtrapolationDistanceInfo]:
         n_short_range = sum([1 for ir in interaction_ranges if ir == InteractionRange.SHORT_RANGE])
-        distance_infos = ReservedVector[ExtrapolationDistanceInfo](n_short_range, ExtrapolationDistanceInfo)
+        
+        return ReservedVector[ExtrapolationDistanceInfo](n_short_range, ExtrapolationDistanceInfo)
+        
+    def evaluate_batch(self, samples: Sequence[SixSideLengths]) -> Sequence[float]:
+        interaction_ranges = [classify_interaction_range(sample) for sample in samples]
 
-        long_range_corrector = LongRangeEnergyCorrector()
+        batch_sidelengths = self._allocate_batch_sidelengths(interaction_ranges)
+        distance_infos = self._allocate_distance_infos(interaction_ranges)
 
         for sample, interact_range in zip(samples, interaction_ranges):
             if interact_range == InteractionRange.SHORT_RANGE:
@@ -144,11 +118,11 @@ class ExtrapolatedPotential:
                 i_output_energies += 2
                 i_distance_infos += 1
             elif interact_range == InteractionRange.LONG_RANGE:
-                extrapolated_energies[i_extrap] = long_range_corrector.apply_dispersion_from_sidelengths(sample)
+                extrapolated_energies[i_extrap] = self._long_range_corrector.apply_dispersion_from_sidelengths(sample)
                 i_output_energies += 0
             elif interact_range == InteractionRange.MIXED_MID_LONG_RANGE:
                 abinitio_energy = output_data[i_output_energies]
-                extrapolated_energies[i_extrap] = long_range_corrector.apply_mixed_from_sidelengths(
+                extrapolated_energies[i_extrap] = self._long_range_corrector.apply_mixed_from_sidelengths(
                     abinitio_energy, sample
                 )
                 i_output_energies += 1
