@@ -23,7 +23,7 @@ def save_fourbody_training_data(
     _check_training_data_dimensions(sidelengths, energies)
 
     with open(filename, "w") as fout:
-        for (sidelen, energy) in zip(sidelengths, energies):
+        for sidelen, energy in zip(sidelengths, energies):
             fout.write(_format_data_line(sidelen, energy))
 
 
@@ -77,4 +77,4 @@ def _check_training_data_dimensions(sidelengths: np.ndarray[float, float], energ
 def _format_sidelength_line(sidelengths: Tuple[float, ...]) -> str:
     delimiter = "   "
     formatted_sidelengths = [f"{s: .12e}" for s in sidelengths]
-    return delimiter.join(formatted_sidelengths) + '\n'
+    return delimiter.join(formatted_sidelengths) + "\n"
