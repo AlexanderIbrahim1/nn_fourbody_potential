@@ -1,5 +1,3 @@
-import numpy as np
-
 from typing import Tuple
 
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExtrapolationEnergies
@@ -7,6 +5,8 @@ from nn_fourbody_potential.full_range.short_range_extrapolation_types import Ext
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExtrapolationDistanceInfo
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import LinearEnergyExtrapolator
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExponentialEnergyExtrapolator
+from nn_fourbody_potential.full_range.utils import smooth_01_transition
+from nn_fourbody_potential.full_range.utils import is_different_sign
 from nn_fourbody_potential.sidelength_distributions import SixSideLengths
 
 
@@ -21,7 +21,7 @@ def short_range_energy_extrapolation(
     expon_extrapolator = ExponentialEnergyExtrapolator(energies, extrap_distance_info)
 
     # an exponential decay does not change the sign of the function; we must extrapolate linearly here
-    if _is_different_sign(energies.lower, energies.upper):
+    if is_different_sign(energies.lower, energies.upper):
         return linear_extrapolator.energy
 
     # if the magnitude increases with distance, then an exponential decay is not an appropriate fit
@@ -33,28 +33,12 @@ def short_range_energy_extrapolation(
     elif expon_extrapolator.slope >= slope_max:
         return linear_extrapolator.energy
     else:
-        weight_linear = _smooth_01_transition(expon_extrapolator.slope, slope_min, slope_max)
+        weight_linear = smooth_01_transition(expon_extrapolator.slope, slope_min, slope_max)
         weight_expon = 1.0 - weight_linear
         energy_linear = linear_extrapolator.energy
         energy_expon = expon_extrapolator.energy
 
         return weight_linear * energy_linear + weight_expon * energy_expon
-
-
-def _smooth_01_transition(x: float, x_min: float, x_max: float) -> float:
-    """Smoothly transition from 0.0 at or before x <= x_min, to 1.0 at or after x >= x_max."""
-    assert x_min < x_max
-    if x <= x_min:
-        return 0.0
-    elif x >= x_max:
-        return 1.0
-    else:
-        k = (x - x_min) / (x_max - x_min)
-        return 0.5 * (1.0 - np.cos(np.pi * k))
-
-
-def _is_different_sign(energies_lower: float, energies_upper: float) -> bool:
-    return energies_lower * energies_upper <= 0.0
 
 
 def prepare_short_range_extrapolation_data(
