@@ -3,28 +3,12 @@ This module contains components for calculating the four-body interaction potent
 energy for parahydrogen, incorporating possible short-range or long-range adjustments.
 """
 
-# PLAN
-# - accept the data in the same format that the NN PES does; as batches of six side lengths
-#   - maybe later accept other formats (a list of collections of four points?)
-#   - but leave this for later
-# - for each, sample, determine ahead of time if it is short-range, mid-range, or long-range
-#
-# short-range
-# - create the additional samples to be fed into the NNPES (so that the energies can be extrapolated)
-# - come up with a way to keep track of them
-# - when the energies come out of the NN, use them to extrapolate to short ranges
-#
-# mid-range
-# - just feed them into the NN PES directly
-#
-# long-range
-# - use the attenuation function to determine ahead of time if the energy will be a mix of mid-range and
-#   long-range interaction energies, or if it will be entirely long-range
-# - if entirely long-range, then don't feed the sample into the NN
-#   - just use the disperion potential
-
 # TODO:
-# - put the `short_range_distance_cutoff` and the `long_range_sum_of_sidelength_cutoff` somewhere as global constants?
+# - repo appears to work BUT:
+#   - still need to test it (all orders of inputs, corner cases, etc.)
+#   - needs to be cleaned up
+#
+# - move `ReservedVector` into its own module?
 
 from __future__ import annotations
 
@@ -44,6 +28,7 @@ from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.full_range.interaction_range import InteractionRange
 from nn_fourbody_potential.full_range.interaction_range import classify_interaction_range
 from nn_fourbody_potential.full_range.interaction_range import interaction_range_size_allocation
+from nn_fourbody_potential.full_range.long_range import LongRangeEnergyCorrector
 from nn_fourbody_potential.full_range.short_range import prepare_short_range_extrapolation_data
 from nn_fourbody_potential.full_range.short_range import short_range_energy_extrapolation
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExtrapolationDistanceInfo
@@ -57,14 +42,14 @@ T = TypeVar("T")
 
 
 class ReservedVector(Generic[T]):
-    def __init__(self, n_elements: Union[int, Sequence[int]], type_t: T) -> None:
+    def __init__(self, shape: Union[int, Sequence[int]], type_t: T) -> None:
         """
         NOTE: I cannot set `dtype=T` for the numpy array because it will throw an error such as
             `TypeError: Cannot interpret '~T' as a data type`
         This is why the `type_t` variable must be redundantly passed into the constructor
 
         """
-        self._elements = np.empty(n_elements, dtype=type_t)
+        self._elements = np.empty(shape, dtype=type_t)
         self._i_elem = 0
 
     def push_back(self, elem: T) -> None:
@@ -77,6 +62,13 @@ class ReservedVector(Generic[T]):
     @property
     def elements(self) -> np.ndarray[T]:
         return self._elements
+
+    @property
+    def size(self) -> int:
+        return self._elements.size
+
+    def __getitem__(self, index: int) -> T:
+        return self._elements[index]
 
 
 class ExtrapolatedPotential:
@@ -101,6 +93,8 @@ class ExtrapolatedPotential:
         n_short_range = sum([1 for ir in interaction_ranges if ir == InteractionRange.SHORT_RANGE])
         distance_infos = ReservedVector[ExtrapolationDistanceInfo](n_short_range, ExtrapolationDistanceInfo)
 
+        long_range_corrector = LongRangeEnergyCorrector()
+
         for sample, interact_range in zip(samples, interaction_ranges):
             if interact_range == InteractionRange.SHORT_RANGE:
                 extrap_sidelengths, extrap_distance_info = prepare_short_range_extrapolation_data(
@@ -111,21 +105,27 @@ class ExtrapolatedPotential:
                 distance_infos.push_back(extrap_distance_info)
             elif interact_range == InteractionRange.LONG_RANGE:
                 continue
+            elif interact_range == InteractionRange.MIXED_MID_LONG_RANGE:
+                batch_sidelengths.push_back(sample)
             else:
                 batch_sidelengths.push_back(sample)
 
-        input_data = transform_sidelengths_data(batch_sidelengths.elements, self._transformers)
-        input_data = torch.from_numpy(input_data.astype(np.float32))
-        # input_data = torch.from_numpy(input_data.astype(np.float32))  # I think it's already of type np.float32?
+        if batch_sidelengths.size != 0:
+            input_data = transform_sidelengths_data(batch_sidelengths.elements, self._transformers)
+            input_data = torch.from_numpy(input_data.astype(np.float32))
+            # input_data = torch.from_numpy(input_data.astype(np.float32))  # I think it's already of type np.float32?
 
-        with torch.no_grad():
-            output_data = self._neural_network(input_data)
-            output_energies = output_data.detach().cpu().numpy()  # NOTE: is .cpu() making too many assumptions?
+            with torch.no_grad():
+                output_data = self._neural_network(input_data)
+                output_energies = output_data.detach().cpu().numpy()  # NOTE: is .cpu() making too many assumptions?
+
+        else:
+            output_energies = np.array([])
 
         i_distance_infos = 0
         i_output_energies = 0
 
-        extrapolated_energies = np.empty(interaction_ranges.size, dtype=np.float32)
+        extrapolated_energies = np.empty(len(interaction_ranges), dtype=np.float32)
 
         # loop over samples and interact_range pairs
         # allocate memory for the final array of floats
@@ -141,13 +141,18 @@ class ExtrapolatedPotential:
                 extrapolated_energies[i_extrap] = short_range_energy_extrapolation(
                     extrap_distance_info, extrap_energies
                 )
-                i_distance_infos += 1
                 i_output_energies += 2
+                i_distance_infos += 1
             elif interact_range == InteractionRange.LONG_RANGE:
-                # get the long-range energy using the sample
+                extrapolated_energies[i_extrap] = long_range_corrector.apply_dispersion_from_sidelengths(sample)
                 i_output_energies += 0
+            elif interact_range == InteractionRange.MIXED_MID_LONG_RANGE:
+                abinitio_energy = output_data[i_output_energies]
+                extrapolated_energies[i_extrap] = long_range_corrector.apply_mixed_from_sidelengths(
+                    abinitio_energy, sample
+                )
+                i_output_energies += 1
             else:
-                # just use the interaction energy directly
                 extrapolated_energies[i_extrap] = output_energies[i_output_energies]
                 i_output_energies += 1
 
