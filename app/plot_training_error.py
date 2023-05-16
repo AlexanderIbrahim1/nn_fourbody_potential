@@ -23,16 +23,14 @@ def plot_error_vs_epoch() -> None:
     epoch, valid_mse = np.loadtxt(model_dirpath / valid_filename, unpack=True, skiprows=1, delimiter=":")
 
     fig, ax = plt.subplots()
-    ax.set_xlabel('epoch', fontsize=18)
-    ax.set_ylabel('ln(mse loss)', fontsize=18)
+    ax.set_xlabel("epoch", fontsize=18)
+    ax.set_ylabel("ln(mse loss)", fontsize=18)
     ax.plot(epoch, np.log(train_mse), label="training")
     ax.plot(epoch, np.log(valid_mse), label="validation")
-    
+
     ax.legend()
     fig.tight_layout()
     plt.show()
-    
-    
 
 
 if __name__ == "__main__":

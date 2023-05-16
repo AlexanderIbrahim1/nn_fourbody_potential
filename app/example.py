@@ -41,7 +41,6 @@ def feature_transformers() -> list[SixSideLengthsTransformer]:
 
 
 def main() -> None:
-
     # begin with the four points in 3D Cartesian space
     # the values chosen correspond to (almost) a tetrahedron with a side length of 2.2 Angstroms
     points = [
