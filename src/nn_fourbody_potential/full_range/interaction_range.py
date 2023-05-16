@@ -4,16 +4,23 @@ geometry as being short-range, mid-range, or long-range. These classifications a
 to determine how a sample is treated.
 """
 
+# TODO:
+# - can save time by not recalculating the mean when comparing long and mid-long ranges
+
+import statistics
+
 import enum
 
 from nn_fourbody_potential.sidelength_distributions import SixSideLengths
 from nn_fourbody_potential.full_range.constants import SHORT_RANGE_DISTANCE_CUTOFF
-from nn_fourbody_potential.full_range.constants import LONG_RANGE_SUM_OF_SIDELENGTHS_CUTOFF
+from nn_fourbody_potential.full_range.constants import START_LONG_RANGE_CUTOFF
+from nn_fourbody_potential.full_range.constants import END_LONG_RANGE_CUTOFF
 
 
 class InteractionRange(enum.Enum):
     SHORT_RANGE = enum.auto()
     MID_RANGE = enum.auto()
+    MIXED_MID_LONG_RANGE = enum.auto()
     LONG_RANGE = enum.auto()
 
 
@@ -25,6 +32,8 @@ def interaction_range_size_allocation(interact_range: InteractionRange) -> int:
         return 2
     elif interact_range == InteractionRange.LONG_RANGE:
         return 0
+    elif interact_range == InteractionRange.MIXED_MID_LONG_RANGE:
+        return 1
     else:
         return 1
 
@@ -37,6 +46,8 @@ def classify_interaction_range(
         return InteractionRange.SHORT_RANGE
     elif _is_long_range_sample(sample):
         return InteractionRange.LONG_RANGE
+    elif _is_mixed_mid_long_range_sample(sample):
+        return InteractionRange.MIXED_MID_LONG_RANGE
     else:
         return InteractionRange.MID_RANGE
 
@@ -45,5 +56,11 @@ def _is_short_range_sample(sample: SixSideLengths) -> bool:
     return any([s < SHORT_RANGE_DISTANCE_CUTOFF for s in sample])
 
 
+def _is_mixed_mid_long_range_sample(sample: SixSideLengths) -> bool:
+    average_sidelength = statistics.mean(sample)
+    return START_LONG_RANGE_CUTOFF < average_sidelength < END_LONG_RANGE_CUTOFF
+
+
 def _is_long_range_sample(sample: SixSideLengths) -> bool:
-    return sum(sample) > LONG_RANGE_SUM_OF_SIDELENGTHS_CUTOFF
+    average_sidelength = statistics.mean(sample)
+    return average_sidelength > END_LONG_RANGE_CUTOFF
