@@ -1,7 +1,5 @@
 """
 This module contains the neural network model to be trained.
-
-TODO: turn asserts into exceptions
 """
 
 import torch
@@ -69,6 +67,11 @@ def _create_linear_sequential(layer_sizes: list[int], apply_batch_norm: bool = F
     A future change could involve allowing more than just ReLU?
     """
     n_sizes = len(layer_sizes)
+
+    if n_sizes < 2:
+        raise ValueError(
+            "Need at least two layers (the input and output layers)\n" f"Found number of layers: {n_sizes}"
+        )
 
     assert n_sizes >= 2
     for size in layer_sizes:
