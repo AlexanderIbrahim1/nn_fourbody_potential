@@ -28,8 +28,8 @@ class TestLongRangeEnergyCorrector:
         abinitio_energy = 20.0  # arbitrary value
 
         long_range_corrector = LongRangeEnergyCorrector()
-        energy_from_side_lengths = long_range_corrector.apply_from_sidelengths(abinitio_energy, six_side_lengths)
-        energy_from_points = long_range_corrector.apply_from_four_points(abinitio_energy, tetrahedron_points)
+        energy_from_side_lengths = long_range_corrector.apply_mixed_from_sidelengths(abinitio_energy, six_side_lengths)
+        energy_from_points = long_range_corrector.apply_mixed_from_four_points(abinitio_energy, tetrahedron_points)
 
         assert energy_from_points == pytest.approx(energy_from_side_lengths)
 
@@ -42,7 +42,7 @@ class TestLongRangeEnergyCorrector:
 
         zero_attenuation = lambda _: 0.0
         long_range_corrector = LongRangeEnergyCorrector(attenuation_function=zero_attenuation)
-        corrected_energy = long_range_corrector.apply_from_sidelengths(arb_abinitio_energy, arb_six_side_lengths)
+        corrected_energy = long_range_corrector.apply_mixed_from_sidelengths(arb_abinitio_energy, arb_six_side_lengths)
 
         assert corrected_energy == pytest.approx(arb_abinitio_energy)
 
@@ -66,7 +66,7 @@ class TestLongRangeEnergyCorrector:
             dispersion_potential=dispersion_potential, attenuation_function=one_attenuation
         )
 
-        corrected_energy = long_range_corrector.apply_from_four_points(arb_abinitio_energy, arb_tetrahedron_points)
+        corrected_energy = long_range_corrector.apply_mixed_from_four_points(arb_abinitio_energy, arb_tetrahedron_points)
         dispersion_energy = dispersion_potential(*arb_tetrahedron_points)
 
         assert corrected_energy == pytest.approx(dispersion_energy)
