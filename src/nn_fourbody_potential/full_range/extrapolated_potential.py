@@ -64,9 +64,6 @@ class ReservedVector(Generic[T]):
         This is why the `type_t` variable must be redundantly passed into the constructor
 
         """
-        if n_elements < 0:
-            raise ValueError("Cannot reserve a negative number of elements.")
-
         self._elements = np.empty(n_elements, dtype=type_t)
         self._i_elem = 0
 

@@ -27,8 +27,3 @@ class TestReservedVector:
         
         with pytest.raises(IndexError):
             vec.push_back(8)
-    
-    def test_raises_negative_reserved_elements(self):
-        size = -1
-        with pytest.raises(ValueError):
-            ReservedVector[int](size, int)
