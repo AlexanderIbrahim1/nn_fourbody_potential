@@ -2,24 +2,6 @@
 
 ## 2023-05-04
 
-### Add short-range and long-range extrapolations
-
-- Long-range
-- take a linear combination of the NNPES energy and the dispersion energy
-  - also use the same "connecting function" that the SG potential used (with different parameters)
-    - maybe the decay should be much faster, because the NNPES energy converges fairly quickly to the long-range energy anyways?
-
-- Short-range
-- do what was done in the 3BPES paper
-  - assume that the four-body interaction energy varies exponentially with the scaling of all 6 side lengths
-  - if a 6-tuple input has side lengths that are too small:
-    - get three inputs with side lengths in the training domain
-    - calculate energies for these three inputs
-    - perform an exponential extrapolation to the small input
-  - if the exponential increase is too drastic, switch to a linear extrapolation
-- this is more complicated, and requires a buffering system
-  - because the inputs to the NN, and the outputs, no longer match 1-to-1, if 3 inputs are needed for a single energy
-
 ### Get PyTorch working on graham/cedar
 
 - there are instructions for how to do this on computecanada's website (or whatever it is called now)
@@ -37,6 +19,24 @@
 
 - the short-range interaction energies are the most important ones for my purposes
   - I need to get some more, and then retrain
+
+### Add short-range and long-range extrapolations [DONE]
+
+- Long-range
+- take a linear combination of the NNPES energy and the dispersion energy
+  - also use the same "connecting function" that the SG potential used (with different parameters)
+    - maybe the decay should be much faster, because the NNPES energy converges fairly quickly to the long-range energy anyways?
+
+- Short-range
+- do what was done in the 3BPES paper
+  - assume that the four-body interaction energy varies exponentially with the scaling of all 6 side lengths
+  - if a 6-tuple input has side lengths that are too small:
+    - get three inputs with side lengths in the training domain
+    - calculate energies for these three inputs
+    - perform an exponential extrapolation to the small input
+  - if the exponential increase is too drastic, switch to a linear extrapolation
+- this is more complicated, and requires a buffering system
+  - because the inputs to the NN, and the outputs, no longer match 1-to-1, if 3 inputs are needed for a single energy
 
 ## 2023-02-24
 
