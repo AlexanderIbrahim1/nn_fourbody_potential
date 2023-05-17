@@ -41,7 +41,3 @@ def energy_filter(energy: float, abs_minimum_energy_cutoff: float) -> bool:
 def sidelengths_filter(sidelengths: SixSideLengths, maximum_average_sidelength_cutoff: float) -> bool:
     average_sidelength = mean(sidelengths)
     return average_sidelength <= maximum_average_sidelength_cutoff
-
-
-if __name__ == "__main__":
-    main()
