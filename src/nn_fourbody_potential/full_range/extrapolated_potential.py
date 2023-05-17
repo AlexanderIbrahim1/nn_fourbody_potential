@@ -6,16 +6,11 @@ energy for parahydrogen, incorporating possible short-range or long-range adjust
 # TODO:
 # - repo appears to work BUT:
 #   - still need to test it (all orders of inputs, corner cases, etc.)
-#   - needs to be cleaned up
-#
-# - move `ReservedVector` into its own module?
 
 from __future__ import annotations
 
-from typing import Generic
 from typing import Sequence
-from typing import TypeVar
-from typing import Union
+from typing import Tuple
 
 import numpy as np
 import torch
@@ -51,23 +46,21 @@ class ExtrapolatedPotential:
 
         self._neural_network.eval()
     
-    def _allocate_batch_sidelengths(self, interaction_ranges: Sequence[InteractionRange]) -> ReservedVector[np.float32]:
+    def _preallocate_batch_sidelengths(self, interaction_ranges: Sequence[InteractionRange]) -> ReservedVector[np.float32]:
         total_size_allocation = sum([interaction_range_size_allocation(ir) for ir in interaction_ranges])
         n_sidelengths = 6
         sidelengths_shape = (total_size_allocation, n_sidelengths)
         
-        return ReservedVector[np.float32](sidelengths_shape, np.float32)
+        return ReservedVector[np.float32].new(sidelengths_shape, np.float32)
 
-    def _allocate_distance_infos(self, interaction_ranges: Sequence[InteractionRange]) -> ReservedVector[ExtrapolationDistanceInfo]:
+    def _preallocate_distance_infos(self, interaction_ranges: Sequence[InteractionRange]) -> ReservedVector[ExtrapolationDistanceInfo]:
         n_short_range = sum([1 for ir in interaction_ranges if ir == InteractionRange.SHORT_RANGE])
         
-        return ReservedVector[ExtrapolationDistanceInfo](n_short_range, ExtrapolationDistanceInfo)
-        
-    def evaluate_batch(self, samples: Sequence[SixSideLengths]) -> Sequence[float]:
-        interaction_ranges = [classify_interaction_range(sample) for sample in samples]
-
-        batch_sidelengths = self._allocate_batch_sidelengths(interaction_ranges)
-        distance_infos = self._allocate_distance_infos(interaction_ranges)
+        return ReservedVector[ExtrapolationDistanceInfo].new(n_short_range, ExtrapolationDistanceInfo)
+    
+    def _batch_from_interaction_ranges(self, samples: Sequence[SixSideLengths], interaction_ranges: Sequence[InteractionRange]) -> Tuple[ReservedVector[np.float32], ReservedVector[ExtrapolationDistanceInfo]]:
+        batch_sidelengths = self._preallocate_batch_sidelengths(interaction_ranges)
+        distance_infos = self._preallocate_distance_infos(interaction_ranges)
 
         for sample, interact_range in zip(samples, interaction_ranges):
             if interact_range == InteractionRange.SHORT_RANGE:
@@ -77,57 +70,54 @@ class ExtrapolatedPotential:
                 batch_sidelengths.push_back(extrap_sidelengths.lower)
                 batch_sidelengths.push_back(extrap_sidelengths.upper)
                 distance_infos.push_back(extrap_distance_info)
-            elif interact_range == InteractionRange.LONG_RANGE:
-                continue
+            elif interact_range == InteractionRange.MID_RANGE:
+                batch_sidelengths.push_back(sample)
             elif interact_range == InteractionRange.MIXED_MID_LONG_RANGE:
                 batch_sidelengths.push_back(sample)
+            elif interact_range == InteractionRange.LONG_RANGE:
+                continue
             else:
-                batch_sidelengths.push_back(sample)
-
+                assert False, "unreachable"
+        
+        return batch_sidelengths, distance_infos
+    
+    def _calculate_batch_energies(self, batch_sidelengths: ReservedVector[np.float32]) -> ReservedVector[np.float32]:
         if batch_sidelengths.size != 0:
             input_data = transform_sidelengths_data(batch_sidelengths.elements, self._transformers)
-            input_data = torch.from_numpy(input_data.astype(np.float32))
-            # input_data = torch.from_numpy(input_data.astype(np.float32))  # I think it's already of type np.float32?
+            print(input_data)
+            input_data = torch.from_numpy(input_data.astype(np.float32))  # NOTE: I think it's already of type np.float32?
 
             with torch.no_grad():
                 output_data = self._neural_network(input_data)
                 output_energies = output_data.detach().cpu().numpy()  # NOTE: is .cpu() making too many assumptions?
-
         else:
             output_energies = np.array([])
+        
+        return ReservedVector[np.float32].from_array(output_energies)
+    
+    def evaluate_batch(self, samples: Sequence[SixSideLengths]) -> Sequence[float]:
+        interaction_ranges = [classify_interaction_range(sample) for sample in samples]
+        
+        batch_sidelengths, distance_infos = self._batch_from_interaction_ranges(samples, interaction_ranges)
+        batch_energies = self._calculate_batch_energies(batch_sidelengths)
 
-        i_distance_infos = 0
-        i_output_energies = 0
+        extrapolated_energies = np.empty(len(samples), dtype=np.float32)
 
-        extrapolated_energies = np.empty(len(interaction_ranges), dtype=np.float32)
-
-        # loop over samples and interact_range pairs
-        # allocate memory for the final array of floats
-        # get the energy depending on short-range, mid-range, long-range
-        # need to keep track of the indices here!!!
         for i_extrap, (sample, interact_range) in enumerate(zip(samples, interaction_ranges)):
             if interact_range == InteractionRange.SHORT_RANGE:
-                # get the short-range energy using distance_infos and the extrapolated energies
-                extrap_distance_info = distance_infos[i_distance_infos]
-                extrap_energies = ExtrapolationEnergies(
-                    output_data[i_output_energies], output_data[i_output_energies + 1]
-                )
-                extrapolated_energies[i_extrap] = short_range_energy_extrapolation(
-                    extrap_distance_info, extrap_energies
-                )
-                i_output_energies += 2
-                i_distance_infos += 1
-            elif interact_range == InteractionRange.LONG_RANGE:
-                extrapolated_energies[i_extrap] = self._long_range_corrector.apply_dispersion_from_sidelengths(sample)
-                i_output_energies += 0
+                dist_info = distance_infos.pop_front()
+                lower_energy = batch_energies.pop_front()
+                upper_energy = batch_energies.pop_front()
+                extrap_energies = ExtrapolationEnergies(lower_energy, upper_energy)
+                extrapolated_energies[i_extrap] = short_range_energy_extrapolation(dist_info, extrap_energies)
+            elif interact_range == InteractionRange.MID_RANGE:
+                extrapolated_energies[i_extrap] = batch_energies.pop_front()
             elif interact_range == InteractionRange.MIXED_MID_LONG_RANGE:
-                abinitio_energy = output_data[i_output_energies]
-                extrapolated_energies[i_extrap] = self._long_range_corrector.apply_mixed_from_sidelengths(
-                    abinitio_energy, sample
-                )
-                i_output_energies += 1
+                abinitio_energy = batch_energies.pop_front()
+                extrapolated_energies[i_extrap] = self._long_range_corrector.mixed_from_sidelengths(abinitio_energy, sample)
+            elif interact_range == InteractionRange.LONG_RANGE:
+                extrapolated_energies[i_extrap] = self._long_range_corrector.dispersion_from_sidelengths(sample)
             else:
-                extrapolated_energies[i_extrap] = output_energies[i_output_energies]
-                i_output_energies += 1
-
+                assert False, "unreachable"
+            
         return extrapolated_energies
