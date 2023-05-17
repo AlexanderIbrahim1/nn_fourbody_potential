@@ -21,7 +21,11 @@ def number_of_lines(file: Path) -> int:
 
 
 def get_training_data_filepath() -> Path:
-    return Path(".", "data", "abinitio_training_data_8901_2.2_4.5.dat")
+    return Path(".", "data", "abinitio_training_data_5000_2.2_4.5.dat")
+
+
+def get_hcp_data_filepath() -> Path:
+    return Path(".", "data", "abinitio_hcp_data_3901_2.2_4.5.dat")
 
 
 def get_validation_data_filepath() -> Path:
@@ -56,7 +60,7 @@ def get_training_parameters(
         batch_size=2000,
         transformations=data_transforms,
         apply_batch_norm=False,
-        other="_initial",
+        other="_pruned",
     )
 
 

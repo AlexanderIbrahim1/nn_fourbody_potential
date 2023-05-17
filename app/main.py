@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 from pathlib import Path
 from typing import Tuple
 
@@ -20,6 +21,7 @@ from nn_fourbody_potential.modelio import ErrorWriter
 from nn_fourbody_potential.transformations import transform_sidelengths_data
 
 import model_info
+import prune
 
 N_FEATURES = 6
 N_OUTPUTS = 1
@@ -79,8 +81,10 @@ def evaluate_model_loss(
 
 
 def train_model(
-    traindata_filepath: Path,
-    validdata_filepath: Path,
+    x_train: torch.Tensor,
+    y_train: torch.Tensor,
+    x_valid: torch.Tensor,
+    y_valid: torch.Tensor,
     params: TrainingParameters,
     model: RegressionMultilayerPerceptron,
     modelpath: Path,
@@ -89,9 +93,6 @@ def train_model(
     save_every: int,
 ) -> None:
     np.random.seed(params.seed)
-
-    x_train, y_train = prepared_data(traindata_filepath, params)
-    x_valid, y_valid = prepared_data(validdata_filepath, params)
 
     training_error_writer = ErrorWriter(modelpath, "training_error_vs_epoch.dat")
     validation_error_writer = ErrorWriter(modelpath, "validation_error_vs_epoch.dat")
@@ -128,14 +129,13 @@ def train_model(
 
 
 def test_model(
+    x_test: torch.Tensor,
+    y_test: torch.Tensor,
     model: RegressionMultilayerPerceptron,
     modelfile: Path,
-    params: TrainingParameters,
-    testdata_filepath: Path,
 ) -> None:
     model.load_state_dict(torch.load(modelfile))
     loss_calculator = torch.nn.MSELoss()
-    x_test, y_test = prepared_data(testdata_filepath, params)
 
     testing_loss = evaluate_model_loss(model, loss_calculator, x_test, y_test)
 
@@ -144,11 +144,33 @@ def test_model(
 
 if __name__ == "__main__":
     training_data_filepath = model_info.get_training_data_filepath()
+    hcp_data_filepath = model_info.get_hcp_data_filepath()
     validation_data_filepath = model_info.get_validation_data_filepath()
     testing_data_filepath = model_info.get_testing_data_filepath()
 
     transforms = model_info.get_data_transforms()
     params = model_info.get_training_parameters(training_data_filepath, transforms)
+
+    x_train_hcp, y_train_hcp = prepared_data(hcp_data_filepath, params)
+    x_train_gen, y_train_gen = prepared_data(training_data_filepath, params)
+    x_valid, y_valid = prepared_data(validation_data_filepath, params)
+    x_test, y_test = prepared_data(testing_data_filepath, params)
+
+    hcp_mask = torch.Tensor(
+        [
+            prune.sidelengths_filter(sidelens, 4.2) and prune.energy_filter(energy, 1.0e-3)
+            for (sidelens, energy) in zip(x_train_hcp, y_train_hcp)
+        ]
+    )
+    x_train_hcp = x_train_hcp[torch.nonzero(hcp_mask).reshape(-1)]
+    y_train_hcp = y_train_hcp[torch.nonzero(hcp_mask).reshape(-1)]
+
+    x_train = torch.concatenate((x_train_gen, x_train_hcp))
+    y_train = torch.concatenate((y_train_gen, y_train_hcp))
+
+    print(x_train.shape)
+    print(y_train.shape)
+    exit()
 
     model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, params.layers)
 
@@ -162,17 +184,19 @@ if __name__ == "__main__":
     model_saver = ModelSaver(saved_models_dirpath)
     last_model_filename = model_saver.get_model_filename(params.total_epochs - 1)
 
-    #    write_training_parameters(training_parameters_filepath, params, overwrite=False)
-    #    train_model(
-    #        training_data_filepath,
-    #        validation_data_filepath,
-    #        params,
-    #        model,
-    #        modelpath,
-    #        model_saver,
-    #        save_every=20,
-    #    )
+    write_training_parameters(training_parameters_filepath, params, overwrite=False)
+    train_model(
+        x_train,
+        y_train,
+        x_valid,
+        y_valid,
+        params,
+        model,
+        modelpath,
+        model_saver,
+        save_every=20,
+    )
 
-    test_loss = test_model(model, last_model_filename, params, testing_data_filepath)
+    test_loss = test_model(x_test, y_test, model, last_model_filename)
     print(f"test loss mse = {test_loss}")
     print(f"test loss rmse = {np.sqrt(test_loss)}")
