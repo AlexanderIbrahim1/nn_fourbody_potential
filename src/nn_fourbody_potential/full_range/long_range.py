@@ -11,7 +11,6 @@ from cartesian.measure import distance
 
 from dispersion4b.coefficients import c12_parahydrogen_midzuno_kihara
 from dispersion4b.potential import FourBodyDispersionPotential
-from dispersion4b.shortrange.attenuation import SilveraGoldmanAttenuation
 
 from hydro4b_coords.generate.generate import six_side_lengths_to_cartesian
 
@@ -71,9 +70,7 @@ class LongRangeEnergyCorrector:
         average_sidelength = statistics.mean(sidelengths)
         return self._mixed(abinitio_energy, four_points, average_sidelength)
 
-    def _mixed(
-        self, abinitio_energy: float, four_points: FourCartesianPoints, average_sidelength: float
-    ) -> float:
+    def _mixed(self, abinitio_energy: float, four_points: FourCartesianPoints, average_sidelength: float) -> float:
         """
         The helper function for applying the long-range correction to the ab initio four-body interaction
         potential energy.
