@@ -38,14 +38,14 @@ class LongRangeEnergyCorrector:
         else:
             self._dispersion_potential = _get_dispersion_potential()
 
-    def apply_dispersion_from_sidelengths(self, sidelengths: SixSideLengths) -> float:
+    def dispersion_from_sidelengths(self, sidelengths: SixSideLengths) -> float:
         four_points = six_side_lengths_to_cartesian(*sidelengths)
         return self._dispersion_potential(*four_points)
 
-    def apply_dispersion_from_four_points(self, four_points: FourCartesianPoints) -> float:
+    def dispersion_from_four_points(self, four_points: FourCartesianPoints) -> float:
         return self._dispersion_potential(*four_points)
 
-    def apply_mixed_from_sidelengths(self, abinitio_energy: float, sidelengths: SixSideLengths) -> float:
+    def mixed_from_sidelengths(self, abinitio_energy: float, sidelengths: SixSideLengths) -> float:
         """
         Apply the long-range energy corrections, using the six side lengths of the four-body geometry
         to calculate the dispersion interaction energy.
@@ -60,18 +60,18 @@ class LongRangeEnergyCorrector:
         """
         four_points = six_side_lengths_to_cartesian(*sidelengths)
         average_sidelength = statistics.mean(sidelengths)
-        return self._apply_mixed(abinitio_energy, four_points, average_sidelength)
+        return self._mixed(abinitio_energy, four_points, average_sidelength)
 
-    def apply_mixed_from_four_points(self, abinitio_energy: float, four_points: FourCartesianPoints) -> float:
+    def mixed_from_four_points(self, abinitio_energy: float, four_points: FourCartesianPoints) -> float:
         """
         Apply the long-range energy corrections, using the four points in 3D Cartesian space of the
         four-body geometry to calculate the dispersion interaction energy.
         """
         sidelengths = [distance(p0, p1) for (p0, p1) in combinations(four_points, 2)]
         average_sidelength = statistics.mean(sidelengths)
-        return self._apply_mixed(abinitio_energy, four_points, average_sidelength)
+        return self._mixed(abinitio_energy, four_points, average_sidelength)
 
-    def _apply_mixed(
+    def _mixed(
         self, abinitio_energy: float, four_points: FourCartesianPoints, average_sidelength: float
     ) -> float:
         """
@@ -100,10 +100,3 @@ class LongRangeEnergyCorrector:
 def _get_dispersion_potential() -> FourBodyDispersionPotential:
     c12 = c12_parahydrogen_midzuno_kihara()
     return FourBodyDispersionPotential(c12)
-
-
-def _get_attenuation_function() -> SilveraGoldmanAttenuation:
-    n_sidelengths = 6
-    atten_r_cutoff = 3.3 * n_sidelengths
-    atten_expon_coeff = 1.5 * n_sidelengths
-    return SilveraGoldmanAttenuation(atten_r_cutoff, atten_expon_coeff)
