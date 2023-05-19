@@ -12,13 +12,19 @@ from hydro4b_coords.generate.distributions import exponential_decay_distribution
 from nn_fourbody_potential import constants
 
 
-def get_abinit_tetrahedron_distribution(x_min: float, x_max: float) -> DiscretizedDistribution:
+def get_abinit_tetrahedron_distribution(
+    x_min: float,
+    x_max: float,
+    *,
+    coeff: float = constants.ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF,
+    decay_rate: float = constants.ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON,
+) -> DiscretizedDistribution:
     distrib = exponential_decay_distribution(
         n_terms=1024,
         x_min=x_min,
         x_max=x_max,
-        coeff=constants.ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF,
-        decay_rate=constants.ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON,
+        coeff=coeff,
+        decay_rate=decay_rate,
     )
 
     return distrib
