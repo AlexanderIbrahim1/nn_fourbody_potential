@@ -134,3 +134,6 @@ app/old_files/
 app/old_models/
 app/models/
 app/sanity_checks/
+
+# vscode
+.vscode
