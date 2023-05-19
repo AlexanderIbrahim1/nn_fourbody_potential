@@ -60,7 +60,7 @@ def get_training_parameters(
         batch_size=2000,
         transformations=data_transforms,
         apply_batch_norm=False,
-        other="_pruned",
+        other="_prunedwd0",
     )
 
 

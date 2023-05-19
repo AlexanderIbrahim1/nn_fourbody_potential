@@ -101,7 +101,9 @@ def train_model(
     trainloader = DataLoader(trainset, batch_size=params.batch_size, shuffle=True, num_workers=1)
 
     loss_calculator = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=params.learning_rate
+    )  # , weight_decay=params.weight_decay) # TODO: turn weight decay back on
 
     for i_epoch in range(params.total_epochs):
         for x_batch, y_batch in trainloader:
@@ -167,10 +169,6 @@ if __name__ == "__main__":
 
     x_train = torch.concatenate((x_train_gen, x_train_hcp))
     y_train = torch.concatenate((y_train_gen, y_train_hcp))
-
-    print(x_train.shape)
-    print(y_train.shape)
-    exit()
 
     model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, params.layers)
 
