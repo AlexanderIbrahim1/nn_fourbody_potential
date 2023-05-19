@@ -9,11 +9,16 @@
     - this lets me work on them here, which is faster
     - then I can just git clone the potential on the remote server, and get it working right away
 
-### Prune the amount of data involved in training
+### Prune the amount of data involved in training [IMPLEMENTED]
 
 - there are lots of sample energies in the training data that are very weak
   - this slows down training, and makes the NN adjust its weights for configurations that barely matter
   - I need to cut down the amount of training data, then retrain
+
+### Try less weight decay [IMPLEMENTED]
+
+- removing the weight decay increases the validation error
+  - so I need to keep it in
 
 ### Get more training data for short-range interaction energies
 
