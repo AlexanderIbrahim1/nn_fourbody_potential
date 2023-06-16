@@ -20,6 +20,7 @@ from cartesian.operations import relative_pair_distances
 from hydro4b_coords.geometries import MAP_GEOMETRY_TAG_TO_FUNCTION
 from hydro4b_coords.generate.generate import sample_fourbody_geometry
 
+from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON
 from nn_fourbody_potential.dataio import save_fourbody_sidelengths
 from nn_fourbody_potential.fourbody_potential import FourBodyAnalyticPotential
 from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
@@ -55,8 +56,9 @@ def generate_hcp_pes_data(
 
 
 def main() -> None:
-    n_samples = 2000
-    distrib = get_abinit_tetrahedron_distribution(2.2, 4.5)
+    n_samples = 1500
+    fast_decay_rate = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 6.0
+    distrib = get_abinit_tetrahedron_distribution(2.2, 4.5, decay_rate=fast_decay_rate)
 
     dist_points = [sample_fourbody_geometry(distrib) for _ in range(n_samples)]
     dist_sidelengths = np.array([get_sidelengths(pts) for pts in dist_points])
@@ -68,7 +70,7 @@ def main() -> None:
     # sidelengths = np.concatenate((dist_sidelengths, hcp_sidelengths))
     sidelengths = dist_sidelengths
 
-    filename = Path("data", f"sample_sidelengths_{len(sidelengths)}_2.2_4.5.dat")
+    filename = Path("data", f"sample_sidelengths_veryfast_decay_{len(sidelengths)}_2.2_4.5.dat")
     save_fourbody_sidelengths(filename, sidelengths)
 
 

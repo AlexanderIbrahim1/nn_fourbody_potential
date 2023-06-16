@@ -33,20 +33,19 @@ from nn_fourbody_potential.transformations import transform_sidelengths_data
 import model_info
 
 
-def get_model() -> RegressionMultilayerPerceptron:
+def get_model(modelfile: Path, layer_sizes: list[int]) -> RegressionMultilayerPerceptron:
     # create the PyTorch model; the following parameters (input features, outputs, and the layer sizes)
     # are specific to the model that was trained;
     # so far, the weights have not been initialized
     n_features = 6
     n_outputs = 1
-    layer_sizes = [64, 128, 128, 64]
     model = RegressionMultilayerPerceptron(n_features, n_outputs, layer_sizes)
 
     # the path to the specific .pth file
     # 2999 corresponds to the very last batch
-    modelfile = Path(
-        "models", "nnpes_pruned_layers64_128_128_64_lr_0.000200_datasize_5000", "models", "nnpes_02999.pth"
-    )
+    # modelfile = Path(
+    #    "models", "nnpes_pruned_layers64_128_128_64_lr_0.000200_datasize_5000", "models", "nnpes_02999.pth"
+    # )
 
     # fill the weights of the model
     model.load_state_dict(torch.load(modelfile))
@@ -91,20 +90,43 @@ def prepared_data(data_filepath: Path) -> Tuple[torch.Tensor, torch.Tensor]:
 
 
 def main() -> None:
-    model = get_model()
+    modelfile8 = Path(
+        "models", "nnpes_small8_withfast_layers8_16_16_8_lr_0.000200_datasize_5000", "models", "nnpes_05999.pth"
+    )
+    modelfile16 = Path(
+        "models", "nnpes_small16_withfast_layers16_32_32_16_lr_0.000200_datasize_5000", "models", "nnpes_05999.pth"
+    )
+    modelfile32 = Path(
+        "models", "nnpes_small32_withfast_layers32_64_64_32_lr_0.000200_datasize_5000", "models", "nnpes_05999.pth"
+    )
+    model8 = get_model(modelfile8, [8, 16, 16, 8])
+    model16 = get_model(modelfile16, [16, 32, 32, 16])
+    model32 = get_model(modelfile32, [32, 64, 64, 32])
 
-    data_filepath = model_info.get_training_data_filepath()
-    x_data, y_data = prepared_data(data_filepath)
+    training_data_filepath = model_info.get_training_data_filepath()
+    fastdecay_training_data_filepath = model_info.get_fastdecay_training_data_filepath()
+    veryfastdecay_training_data_filepath = model_info.get_veryfastdecay_training_data_filepath()
+
+    x_slowdecay_train, y_slowdecay_train = prepared_data(training_data_filepath)
+    x_fastdecay_train, y_fastdecay_train = prepared_data(fastdecay_training_data_filepath)
+    x_veryfastdecay_train, y_veryfastdecay_train = prepared_data(veryfastdecay_training_data_filepath)
+
+    x_train = torch.concatenate((x_slowdecay_train, x_fastdecay_train, x_veryfastdecay_train))
+    y_train = torch.concatenate((y_slowdecay_train, y_fastdecay_train, y_veryfastdecay_train))
 
     with torch.no_grad():
-        y_predicted = model(x_data)
+        y_predicted8 = model8(x_train)
+        y_predicted16 = model16(x_train)
+        y_predicted32 = model32(x_train)
 
     #    energies_error = torch.abs(y_predicted - y_data).reshape(-1)
     #    energies = y_data.reshape(-1)
 
     fig, ax = plt.subplots()
     # ax.plot(energies, energies_error, lw=0, marker="o", ms=1.0)
-    ax.plot(y_predicted.reshape(-1), y_data.reshape(-1), lw=0, marker="o", ms=1.0)
+    ax.plot(y_predicted8.reshape(-1), y_train.reshape(-1), lw=0, marker="o", ms=1.0)
+    ax.plot(y_predicted16.reshape(-1), y_train.reshape(-1), lw=0, marker="o", ms=1.0)
+    ax.plot(y_predicted32.reshape(-1), y_train.reshape(-1), lw=0, marker="o", ms=1.0)
     plt.show()
 
 

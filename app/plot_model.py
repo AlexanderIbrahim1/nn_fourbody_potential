@@ -62,7 +62,7 @@ def get_nn_model_energies(
 
 # TODO: when comparing the ab initio energies, I need to switch back to getting curves for the ab initio potential
 def main(i_epoch: int) -> None:
-    geometry_tag = "sqrt2"
+    geometry_tag = "1"
     geometry_func = MAP_GEOMETRY_TAG_TO_FUNCTION[geometry_tag]
 
     lattice_constants = np.linspace(2.2, 5.0, 2048)
