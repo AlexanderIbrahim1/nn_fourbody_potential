@@ -24,6 +24,30 @@ def get_training_data_filepath() -> Path:
     return Path(".", "data", "abinitio_training_data_5000_2.2_4.5.dat")
 
 
+def get_fastdecay_training_data_filepath() -> Path:
+    return Path(".", "data", "abinitio_fastdecay_training_data_900_2.2_4.5.dat")
+
+
+def get_fastdecay_testing_data_filepath() -> Path:
+    return Path(".", "data", "abinitio_fastdecay_testing_data_300_2.2_4.5.dat")
+
+
+def get_fastdecay_validation_data_filepath() -> Path:
+    return Path(".", "data", "abinitio_fastdecay_validation_data_300_2.2_4.5.dat")
+
+
+def get_veryfastdecay_training_data_filepath() -> Path:
+    return Path(".", "data", "abinitio_veryfastdecay_training_data_900_2.2_4.5.dat")
+
+
+def get_veryfastdecay_testing_data_filepath() -> Path:
+    return Path(".", "data", "abinitio_veryfastdecay_testing_data_300_2.2_4.5.dat")
+
+
+def get_veryfastdecay_validation_data_filepath() -> Path:
+    return Path(".", "data", "abinitio_veryfastdecay_validation_data_300_2.2_4.5.dat")
+
+
 def get_hcp_data_filepath() -> Path:
     return Path(".", "data", "abinitio_hcp_data_3901_2.2_4.5.dat")
 
@@ -52,15 +76,17 @@ def get_training_parameters(
 ) -> TrainingParameters:
     return TrainingParameters(
         seed=0,
-        layers=[64, 128, 128, 64],
+        layers=[8, 16, 16, 8],
+        # layers=[16, 32, 32, 16],
+        # layers=[32, 64, 64, 32],
         learning_rate=2.0e-4,
         weight_decay=1.0e-4,
         training_size=number_of_lines(training_data_filepath),
-        total_epochs=3000,
+        total_epochs=6000,
         batch_size=2000,
         transformations=data_transforms,
         apply_batch_norm=False,
-        other="_prunedwd0",
+        other="_small8_withfast",
     )
 
 
