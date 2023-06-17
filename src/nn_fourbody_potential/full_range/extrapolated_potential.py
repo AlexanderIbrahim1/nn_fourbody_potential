@@ -90,7 +90,6 @@ class ExtrapolatedPotential:
     def _calculate_batch_energies(self, batch_sidelengths: ReservedVector[np.float32]) -> ReservedVector[np.float32]:
         if batch_sidelengths.size != 0:
             input_data = transform_sidelengths_data(batch_sidelengths.elements, self._transformers)
-            print(input_data)
             input_data = torch.from_numpy(
                 input_data.astype(np.float32)
             )  # NOTE: I think it's already of type np.float32?

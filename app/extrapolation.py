@@ -19,6 +19,7 @@ from nn_fourbody_potential.transformations.transformers import MinimumPermutatio
 from nn_fourbody_potential.transformations.transformers import ReciprocalTransformer
 from nn_fourbody_potential.transformations.transformers import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations.transformers import StandardizeTransformer
+from nn_fourbody_potential.transformations import transform_sidelengths_data
 
 
 def get_sample(lattice_constant: float) -> SixSideLengths:
@@ -80,8 +81,16 @@ def main() -> None:
     samples = [get_sample(lat_const) for lat_const in lattice_constants]
     energies = potential.evaluate_batch(samples)
 
+    transformed_samples = transform_sidelengths_data(samples, transformers)
+    transformed_samples = torch.from_numpy(transformed_samples.astype(np.float32))
+
+    with torch.no_grad():
+        output_data = model(transformed_samples)
+        output_energies = output_data.detach().cpu().numpy()  # NOTE: is .cpu() making too many assumptions?
+
     fig, ax = plt.subplots()
     ax.plot(lattice_constants, energies)
+    ax.plot(lattice_constants, output_energies)
     plt.show()
 
 
