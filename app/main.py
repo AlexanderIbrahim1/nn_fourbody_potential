@@ -21,10 +21,10 @@ def train_with_slow_decay_data() -> None:
     transforms = model_info.get_data_transforms()
     params = model_info.get_training_parameters(training_data_filepath, transforms)
 
-    x_train_hcp, y_train_hcp = training.prepared_data(hcp_data_filepath, params)
-    x_train_gen, y_train_gen = training.prepared_data(training_data_filepath, params)
-    x_valid, y_valid = training.prepared_data(validation_data_filepath, params)
-    x_test, y_test = training.prepared_data(testing_data_filepath, params)
+    x_train_hcp, y_train_hcp = training.prepared_data(hcp_data_filepath, transforms)
+    x_train_gen, y_train_gen = training.prepared_data(training_data_filepath, transforms)
+    x_valid, y_valid = training.prepared_data(validation_data_filepath, transforms)
+    x_test, y_test = training.prepared_data(testing_data_filepath, transforms)
 
     hcp_mask = torch.Tensor(
         [
@@ -84,27 +84,29 @@ def train_with_fast_decay_data() -> None:
     transforms = model_info.get_data_transforms()
     params = model_info.get_training_parameters(training_data_filepath, transforms)
 
-    x_train_hcp, y_train_hcp = training.prepared_data(hcp_data_filepath, params)
-    x_train_gen, y_train_gen = training.prepared_data(training_data_filepath, params)
-    x_valid, y_valid = training.prepared_data(validation_data_filepath, params)
-    x_test, y_test = training.prepared_data(testing_data_filepath, params)
-    x_fastdecay_test, y_fastdecay_test = training.prepared_data(fastdecay_testing_data_filepath, params)
-    x_fastdecay_train, y_fastdecay_train = training.prepared_data(fastdecay_training_data_filepath, params)
-    x_fastdecay_valid, y_fastdecay_valid = training.prepared_data(fastdecay_validation_data_filepath, params)
-    x_veryfastdecay_test, y_veryfastdecay_test = training.prepared_data(veryfastdecay_testing_data_filepath, params)
-    x_veryfastdecay_train, y_veryfastdecay_train = training.prepared_data(veryfastdecay_training_data_filepath, params)
+    x_train_hcp, y_train_hcp = training.prepared_data(hcp_data_filepath, transforms)
+    x_train_gen, y_train_gen = training.prepared_data(training_data_filepath, transforms)
+    x_valid, y_valid = training.prepared_data(validation_data_filepath, transforms)
+    x_test, y_test = training.prepared_data(testing_data_filepath, transforms)
+    x_fastdecay_test, y_fastdecay_test = training.prepared_data(fastdecay_testing_data_filepath, transforms)
+    x_fastdecay_train, y_fastdecay_train = training.prepared_data(fastdecay_training_data_filepath, transforms)
+    x_fastdecay_valid, y_fastdecay_valid = training.prepared_data(fastdecay_validation_data_filepath, transforms)
+    x_veryfastdecay_test, y_veryfastdecay_test = training.prepared_data(veryfastdecay_testing_data_filepath, transforms)
+    x_veryfastdecay_train, y_veryfastdecay_train = training.prepared_data(
+        veryfastdecay_training_data_filepath, transforms
+    )
     x_veryfastdecay_valid, y_veryfastdecay_valid = training.prepared_data(
-        veryfastdecay_validation_data_filepath, params
+        veryfastdecay_validation_data_filepath, transforms
     )
 
-    hcp_mask = torch.Tensor(
-        [
-            prune.sidelengths_filter(sidelens, 4.2) and prune.energy_filter(energy, 1.0e-3)
-            for (sidelens, energy) in zip(x_train_hcp, y_train_hcp)
-        ]
-    )
-    x_train_hcp = x_train_hcp[torch.nonzero(hcp_mask).reshape(-1)]
-    y_train_hcp = y_train_hcp[torch.nonzero(hcp_mask).reshape(-1)]
+    # hcp_mask = torch.Tensor(
+    #     [
+    #         prune.sidelengths_filter(sidelens, 4.2) and prune.energy_filter(energy, 1.0e-3)
+    #         for (sidelens, energy) in zip(x_train_hcp, y_train_hcp)
+    #     ]
+    # )
+    # x_train_hcp = x_train_hcp[torch.nonzero(hcp_mask).reshape(-1)]
+    # y_train_hcp = y_train_hcp[torch.nonzero(hcp_mask).reshape(-1)]
 
     x_train = torch.concatenate((x_train_gen, x_train_hcp, x_fastdecay_train, x_veryfastdecay_train))
     y_train = torch.concatenate((y_train_gen, y_train_hcp, y_fastdecay_train, y_veryfastdecay_train))

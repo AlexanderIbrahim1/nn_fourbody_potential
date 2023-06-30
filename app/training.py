@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Sequence
 from typing import Tuple
 
 import numpy as np
@@ -12,6 +13,7 @@ from nn_fourbody_potential.dataio import load_fourbody_training_data
 from nn_fourbody_potential.dataset import PotentialDataset
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.models import TrainingParameters
+from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 
 from nn_fourbody_potential.modelio import ModelSaver
 from nn_fourbody_potential.modelio import ErrorWriter
@@ -42,12 +44,14 @@ def check_data_sizes(
     assert n_outputs == n_outputs_expected
 
 
-def prepared_data(data_filepath: Path, params: TrainingParameters) -> Tuple[torch.Tensor, torch.Tensor]:
+def prepared_data(
+    data_filepath: Path, transformers: Sequence[SixSideLengthsTransformer]
+) -> Tuple[torch.Tensor, torch.Tensor]:
     """Load the sidelengths and energies from 'data_filepath', apply the transformations,
     and turn the sidelengths and energies into torch tensors.
     """
     sidelengths, energies = load_fourbody_training_data(data_filepath)
-    sidelengths = transform_sidelengths_data(sidelengths, params.transformations)
+    sidelengths = transform_sidelengths_data(sidelengths, transformers)
     energies = add_dummy_dimension(energies)
 
     x = torch.from_numpy(sidelengths.astype(np.float32))
