@@ -1,6 +1,6 @@
 import pytest
 
-from nn_fourbody_potential.full_range.extrapolated_potential import ReservedDeque
+from nn_fourbody_potential.reserved_deque import ReservedDeque
 
 
 @pytest.fixture
