@@ -24,7 +24,7 @@ from nn_fourbody_potential.full_range.interaction_range import InteractionRange
 from nn_fourbody_potential.full_range.interaction_range import classify_interaction_range
 from nn_fourbody_potential.full_range.interaction_range import interaction_range_size_allocation
 from nn_fourbody_potential.full_range.long_range import LongRangeEnergyCorrector
-from nn_fourbody_potential.full_range.reserved_vector import ReservedVector
+from nn_fourbody_potential.full_range.reserved_deque import ReservedDeque
 from nn_fourbody_potential.full_range.short_range import prepare_short_range_extrapolation_data
 from nn_fourbody_potential.full_range.short_range import short_range_energy_extrapolation
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExtrapolationDistanceInfo
@@ -48,23 +48,23 @@ class ExtrapolatedPotential:
 
     def _preallocate_batch_sidelengths(
         self, interaction_ranges: Sequence[InteractionRange]
-    ) -> ReservedVector[np.float32]:
+    ) -> ReservedDeque[np.float32]:
         total_size_allocation = sum([interaction_range_size_allocation(ir) for ir in interaction_ranges])
         n_sidelengths = 6
         sidelengths_shape = (total_size_allocation, n_sidelengths)
 
-        return ReservedVector[np.float32].new(sidelengths_shape, np.float32)
+        return ReservedDeque[np.float32].new(sidelengths_shape, np.float32)
 
     def _preallocate_distance_infos(
         self, interaction_ranges: Sequence[InteractionRange]
-    ) -> ReservedVector[ExtrapolationDistanceInfo]:
+    ) -> ReservedDeque[ExtrapolationDistanceInfo]:
         n_short_range = sum([1 for ir in interaction_ranges if ir == InteractionRange.SHORT_RANGE])
 
-        return ReservedVector[ExtrapolationDistanceInfo].new(n_short_range, ExtrapolationDistanceInfo)
+        return ReservedDeque[ExtrapolationDistanceInfo].new(n_short_range, ExtrapolationDistanceInfo)
 
     def _batch_from_interaction_ranges(
         self, samples: Sequence[SixSideLengths], interaction_ranges: Sequence[InteractionRange]
-    ) -> Tuple[ReservedVector[np.float32], ReservedVector[ExtrapolationDistanceInfo]]:
+    ) -> Tuple[ReservedDeque[np.float32], ReservedDeque[ExtrapolationDistanceInfo]]:
         batch_sidelengths = self._preallocate_batch_sidelengths(interaction_ranges)
         distance_infos = self._preallocate_distance_infos(interaction_ranges)
 
@@ -87,7 +87,7 @@ class ExtrapolatedPotential:
 
         return batch_sidelengths, distance_infos
 
-    def _calculate_batch_energies(self, batch_sidelengths: ReservedVector[np.float32]) -> ReservedVector[np.float32]:
+    def _calculate_batch_energies(self, batch_sidelengths: ReservedDeque[np.float32]) -> ReservedDeque[np.float32]:
         if batch_sidelengths.size != 0:
             input_data = transform_sidelengths_data(batch_sidelengths.elements, self._transformers)
             input_data = torch.from_numpy(
@@ -100,7 +100,7 @@ class ExtrapolatedPotential:
         else:
             output_energies = np.array([])
 
-        return ReservedVector[np.float32].from_array(output_energies)
+        return ReservedDeque[np.float32].from_array(output_energies)
 
     def evaluate_batch(self, samples: Sequence[SixSideLengths]) -> Sequence[float]:
         interaction_ranges = [classify_interaction_range(sample) for sample in samples]

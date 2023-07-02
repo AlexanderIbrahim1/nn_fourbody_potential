@@ -1,5 +1,5 @@
 """
-The ReservedVector class allows one to create an empty numpy array, and push elements
+The ReservedDeque class allows one to create an empty numpy array, and push elements
 back into its 0th dimension.
 
 This is similar to how in C++, one can create a `std::vector`, call `reserve()`, then
@@ -17,32 +17,25 @@ import numpy as np
 T = TypeVar("T")
 
 
-class ReservedVector(Generic[T]):
+class ReservedDeque(Generic[T]):
     def __init__(self, elements: np.ndarray[T], i_elem_start: int, i_elem_end: int) -> None:
-        """
-        NOTE: I cannot set `dtype=T` for the numpy array because it will throw an error such as
-            `TypeError: Cannot interpret '~T' as a data type`
-        This is why the `type_t` variable must be redundantly passed into the constructor
-
-        """
         self._elements = elements
         self._i_elem_start = i_elem_start
         self._i_elem_end = i_elem_end
 
     @classmethod
-    def new(cls, shape: Union[int, Sequence[int]], type_t: T) -> "ReservedVector[T]":
+    def new(cls, shape: Union[int, Sequence[int]], type_t: T) -> "ReservedDeque[T]":
         """
         NOTE: I cannot set `dtype=T` for the numpy array because it will throw an error such as
             `TypeError: Cannot interpret '~T' as a data type`
         This is why the `type_t` variable must be redundantly passed into the constructor
-
         """
         i_elem_start = 0
         i_elem_end = 0
         return cls(np.empty(shape, dtype=type_t), i_elem_start, i_elem_end)
 
     @classmethod
-    def from_array(cls, elements: np.ndarray[T]) -> "ReservedVector[T]":
+    def from_array(cls, elements: np.ndarray[T]) -> "ReservedDeque[T]":
         i_elem_start = 0
         i_elem_end = len(elements)
         return cls(elements, i_elem_start, i_elem_end)
