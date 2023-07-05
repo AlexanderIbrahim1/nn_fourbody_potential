@@ -47,12 +47,20 @@ def get_model() -> RegressionMultilayerPerceptron:
     n_features = 6
     n_outputs = 1
     layer_sizes = [64, 128, 128, 64]
+    # layer_sizes = [128, 256, 256, 128]
+    # layer_sizes = [64, 128, 256, 512, 256, 128, 64]
     model = RegressionMultilayerPerceptron(n_features, n_outputs, layer_sizes)
 
     # the path to the specific .pth file
     # 2999 corresponds to the very last batch
     modelfile = Path(
-        "models", "nnpes_initial_layers64_128_128_64_lr_0.000200_datasize_8901", "models", "nnpes_02999.pth"
+        "models",
+        "nnpes_initial_layers64_128_128_64_lr_0.000200_datasize_8901",
+        # "nnpes_small128_withfast_nomask_layers128_256_256_128_lr_0.000200_datasize_5000",
+        # "nnpes_big_withfast_nomask_layers64_128_256_512_256_128_64_lr_0.000100_datasize_5000",
+        # "nnpes_small64_withfast_layers64_128_128_64_lr_0.000200_datasize_5000",
+        "models",
+        "nnpes_02999.pth",
     )
 
     # fill the weights of the model
@@ -89,9 +97,22 @@ def main() -> None:
         output_energies = output_data.detach().cpu().numpy()  # NOTE: is .cpu() making too many assumptions?
 
     fig, ax = plt.subplots()
-    ax.plot(lattice_constants, energies)
-    ax.plot(lattice_constants, output_energies)
-    plt.show()
+
+    ax.set_xlim(3.0, 5.0)
+    ax.set_ylim(-0.06, 0.08)
+
+    ax.set_title(r"Four-Body Interaction Energy of a Tetrahedron", fontsize=14)
+    ax.set_ylabel(r"$ V_4 \ / \ \mathrm{cm}^{-1} $", fontsize=16)
+    ax.set_xlabel(r"lattice constant / $ \AA $", fontsize=16)
+
+    ax.plot(lattice_constants, energies, label="Extrapolated Potential")
+    ax.plot(lattice_constants, output_energies, label="Neural Network, no extrapolation")
+
+    ax.legend(fontsize=12)
+
+    fig.tight_layout()
+    # plt.show()
+    plt.savefig("figures/potential_extrapolation_zoom_in.pdf", dpi=400)
 
 
 if __name__ == "__main__":
