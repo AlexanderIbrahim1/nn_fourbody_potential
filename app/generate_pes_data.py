@@ -13,6 +13,7 @@ from typing import Annotated
 from typing import Sequence
 from typing import Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from cartesian import CartesianND
@@ -56,12 +57,19 @@ def generate_hcp_pes_data(
 
 
 def main() -> None:
-    n_samples = 1500
-    fast_decay_rate = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 6.0
-    distrib = get_abinit_tetrahedron_distribution(2.2, 4.5, decay_rate=fast_decay_rate)
+    n_samples = 4000
+    decay_rate = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * (1.0 / 6.0)
+    distrib = get_abinit_tetrahedron_distribution(2.8, 4.5, decay_rate=decay_rate)
 
     dist_points = [sample_fourbody_geometry(distrib) for _ in range(n_samples)]
     dist_sidelengths = np.array([get_sidelengths(pts) for pts in dist_points])
+
+    # dist_sidelengths = np.array([get_sidelengths(pts) for pts in dist_points]).reshape(-1)
+
+    # fig, ax = plt.subplots()
+    # ax.hist(dist_sidelengths, bins="auto")
+    # plt.show()
+
     # hcp_sidelengths, hcp_energies = generate_hcp_pes_data(potential)
 
     # potential = create_fourbody_analytic_potential()
@@ -70,7 +78,7 @@ def main() -> None:
     # sidelengths = np.concatenate((dist_sidelengths, hcp_sidelengths))
     sidelengths = dist_sidelengths
 
-    filename = Path("data", f"sample_sidelengths_veryfast_decay_{len(sidelengths)}_2.2_4.5.dat")
+    filename = Path("data", f"sample_sidelengths_veryslow_decay_{len(sidelengths)}_2.8_4.5.dat")
     save_fourbody_sidelengths(filename, sidelengths)
 
 
