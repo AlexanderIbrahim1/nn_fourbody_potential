@@ -1,6 +1,8 @@
 from typing import Sequence
 
 import numpy as np
+from numpy.typing import NDArray
+import torch
 
 from nn_fourbody_potential.energy_scale.energy_scale import EnergyScale
 from nn_fourbody_potential.energy_scale.energy_scale import EnergyScaleAssigner
@@ -8,19 +10,9 @@ from nn_fourbody_potential.energy_scale.energy_scale import EnergyScaleFraction
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.reserved_deque import ReservedDeque
 from nn_fourbody_potential.sidelength_distributions import SixSideLengths
+from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 
-
-# PLAN
-# - get energy from the full-range model
-# - feed energy into function to determine which region of the energy scale it belongs to
-# - assign one of the EnergyScale enums to the sample
-# - push the EnergyScale instances into a ReservedVector
-# - have separate ReservedVector instances for the MIXED_LOW_MEDIUM and MIXED_MEDIUM_HIGH instances
-#   to store the fraction of each section
-# - create three ReservedVector instances to store the LOW, MEDIUM, and HIGH samples
-# - then calculate the energies for the LOW, MEDIUM, and HIGH samples
-# - keep using popleft() on the EnergyScale vector to determine how to popleft() energies and fractions
-#   from the other vectors
+from nn_fourbody_potential.transformations.applications import transform_sidelengths_data
 
 
 class EnergyScaleEnsembleModel:
@@ -42,6 +34,7 @@ class EnergyScaleEnsembleModel:
         medium_energy_model: RegressionMultilayerPerceptron,
         high_energy_model: RegressionMultilayerPerceptron,
         energy_scale_assigner: EnergyScaleAssigner,
+        transformers: Sequence[SixSideLengthsTransformer],
     ) -> None:
         self._check_max_n_samples(max_n_samples)
 
@@ -51,19 +44,36 @@ class EnergyScaleEnsembleModel:
         self._medium_energy_model = medium_energy_model
         self._high_energy_model = high_energy_model
         self._energy_scale_assigner = energy_scale_assigner
+        self._transformers = transformers
 
         self._energy_scale_fraction_deque = ReservedDeque[EnergyScaleFraction].new(max_n_samples, EnergyScaleFraction)
-        self._low_samples_deque = ReservedDeque[SixSideLengths].new(max_n_samples, SixSideLengths)
-        self._medium_samples_deque = ReservedDeque[SixSideLengths].new(max_n_samples, SixSideLengths)
-        self._high_samples_deque = ReservedDeque[SixSideLengths].new(max_n_samples, SixSideLengths)
+        self._low_samples_deque = ReservedDeque[SixSideLengths].new(max_n_samples, tuple)
+        self._medium_samples_deque = ReservedDeque[SixSideLengths].new(max_n_samples, tuple)
+        self._high_samples_deque = ReservedDeque[SixSideLengths].new(max_n_samples, tuple)
 
-    def evaluate_batch(self, samples: Sequence[SixSideLengths]) -> Sequence[float]:
+    def _evaluate_energies(
+        self, raw_samples: NDArray, model: RegressionMultilayerPerceptron
+    ) -> ReservedDeque[np.float32]:
+        samples: NDArray = transform_sidelengths_data(raw_samples, self._transformers)
+        samples = samples.astype(np.float32)
+        with torch.no_grad():
+            samples = torch.from_numpy(samples)
+            energies: torch.Tensor = model(samples)
+            energies = energies.detach().cpu().numpy()
+
+        return ReservedDeque[np.float32].from_array(energies)
+
+    def evaluate_batch(self, samples: Sequence[SixSideLengths]) -> NDArray:
         n_samples = len(samples)
         self._check_number_of_samples(n_samples)
 
+        if n_samples == 0:
+            return np.array([])
+
         self._reset_all_deques()
 
-        coarse_energies = self._full_energy_model(samples)
+        samples = np.array([samples]).reshape(-1, 6)
+        coarse_energies = self._evaluate_energies(samples, self._full_energy_model)
 
         for sample, energy in zip(samples, coarse_energies):
             energy_scale_fraction = self._energy_scale_assigner.assign_energy_scale(energy)
@@ -82,12 +92,18 @@ class EnergyScaleEnsembleModel:
             else:
                 self._high_samples_deque.push_back(sample)
 
-        low_energies = ReservedDeque[float].from_array(self._low_energy_model(self._low_samples_deque))
-        medium_energies = ReservedDeque[float].from_array(self._medium_energy_model(self._medium_samples_deque))
-        high_energies = ReservedDeque[float].from_array(self._high_energy_model(self._high_samples_deque))
+        low_samples = np.array([sample for sample in self._low_samples_deque])
+        low_energies = self._evaluate_energies(low_samples, self._low_energy_model)
+
+        medium_samples = np.array([sample for sample in self._medium_samples_deque])
+        medium_energies = self._evaluate_energies(medium_samples, self._medium_energy_model)
+
+        high_samples = np.array([sample for sample in self._high_samples_deque])
+        high_energies = self._evaluate_energies(high_samples, self._high_energy_model)
 
         output_energies = np.empty(n_samples, dtype=np.float32)
-        for i, energy_scale_fraction in enumerate(self._energy_scale_fraction_deque):
+        for i_sample in range(n_samples):
+            energy_scale_fraction = self._energy_scale_fraction_deque[i_sample]
             if energy_scale_fraction.scale == EnergyScale.LOW:
                 energy = low_energies.pop_front()
             elif energy_scale_fraction.scale == EnergyScale.MIXED_LOW_MEDIUM:
@@ -107,7 +123,7 @@ class EnergyScaleEnsembleModel:
             else:
                 energy = high_energies.pop_front()
 
-            output_energies[i] = energy
+            output_energies[i_sample] = energy
 
         return output_energies
 

@@ -22,6 +22,7 @@ class EnergyScaleFraction:
 class EnergyScaleAssigner:
     def __init__(
         self,
+        *,
         low_medium_centre: float,
         low_medium_width: float,
         medium_high_centre: float,
