@@ -90,7 +90,7 @@ def save_sidelengths_and_energies(filepath: Path, sidelengths: NDArray, energies
 
 
 def main() -> None:
-    sampled_data_filepath = Path("data", "abinitio_sampled_data_12000.dat")
+    sampled_data_filepath = Path("data", "abinitio_sampled_data_16000.dat")
     hcp_data_filepath = Path("data", "abinitio_hcp_data_3901.dat")
 
     transformers = []  # model_info.get_data_transforms()
@@ -98,8 +98,8 @@ def main() -> None:
     x_sampled, y_sampled = get_prepared_data_as_numpy(sampled_data_filepath, transformers)
     x_hcp, y_hcp = get_prepared_data_as_numpy(hcp_data_filepath, transformers)
 
-    energy_lowmid_lower_end, energy_lowmid_upper_end = get_lower_upper_ends(energy_centre=1.0, energy_width=0.1)
-    energy_midhigh_lower_end, energy_midhigh_upper_end = get_lower_upper_ends(energy_centre=10.0, energy_width=1.0)
+    energy_lowmid_lower_end, energy_lowmid_upper_end = get_lower_upper_ends(energy_centre=1.0, energy_width=0.0)
+    energy_midhigh_lower_end, energy_midhigh_upper_end = get_lower_upper_ends(energy_centre=10.0, energy_width=0.0)
 
     low_filter = lambda eng: np.abs(eng) <= energy_lowmid_upper_end
     mid_filter = lambda eng: energy_lowmid_lower_end < np.abs(eng) < energy_midhigh_upper_end

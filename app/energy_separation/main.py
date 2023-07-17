@@ -25,7 +25,7 @@ def get_training_parameters(
     return TrainingParameters(
         seed=0,
         layers=[64, 128, 128, 64],
-        learning_rate=1.0e-4,
+        learning_rate=2.0e-4,
         weight_decay=1.0e-4,
         training_size=model_info.number_of_lines(data_filepath),
         total_epochs=3000,
