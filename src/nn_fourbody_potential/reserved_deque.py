@@ -112,7 +112,7 @@ class ReservedDeque(Generic[T]):
 
     @property
     def elements(self) -> np.ndarray[T]:
-        return self._elements
+        return self._elements[self._i_elem_start : self._i_elem_end]
 
     @property
     def max_size(self) -> int:
