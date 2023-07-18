@@ -15,6 +15,7 @@ from cartesian.operations import relative_pair_distances
 
 from nn_fourbody_potential.energy_scale.energy_scale_ensemble_model import EnergyScaleEnsembleModel
 from nn_fourbody_potential.energy_scale.energy_scale import EnergyScaleAssigner
+from nn_fourbody_potential.full_range.extrapolated_potential import ExtrapolatedPotential
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.sidelength_distributions.sidelength_types import SixSideLengths
 from nn_fourbody_potential.transformations.applications import transform_sidelengths_data
@@ -61,28 +62,28 @@ def get_energy_scale_ensemble_model() -> EnergyScaleEnsembleModel:
     all_energy_model_filepath = Path(
         "energy_separation",
         "models",
-        "nnpes_all_energies_layers64_128_128_64_lr_0.000100_datasize_12302",
+        "nnpes_all_energies_layers64_128_128_64_lr_0.000200_datasize_15101",
         "models",
         "nnpes_02999.pth",
     )
     low_energy_model_filepath = Path(
         "energy_separation",
         "models",
-        "nnpes_low_energies_layers64_128_128_64_lr_0.000100_datasize_5081",
+        "nnpes_low_energies_layers64_128_128_64_lr_0.000200_datasize_7941",
         "models",
-        "nnpes_03000.pth",
+        "nnpes_02999.pth",
     )
     mid_energy_model_filepath = Path(
         "energy_separation",
         "models",
-        "nnpes_mid_energies_layers64_128_128_64_lr_0.000100_datasize_3546",
+        "nnpes_mid_energies_layers64_128_128_64_lr_0.000200_datasize_3879",
         "models",
         "nnpes_02999.pth",
     )
     high_energy_model_filepath = Path(
         "energy_separation",
         "models",
-        "nnpes_high_energies_layers64_128_128_64_lr_0.000100_datasize_4208",
+        "nnpes_high_energies_layers64_128_128_64_lr_0.000200_datasize_4393",
         "models",
         "nnpes_02999.pth",
     )
@@ -125,12 +126,15 @@ def get_sample(lattice_constant: float) -> SixSideLengths:
 
 def main() -> None:
     ensemble_model = get_energy_scale_ensemble_model()
+    extrapolated_potential = ExtrapolatedPotential(ensemble_model, feature_transformers())
 
     lattice_constants = np.linspace(1.5, 5.0, 256)
     # lattice_constants = np.array([])
-    samples = np.array([get_sample(lat_const) for lat_const in lattice_constants])
+    # samples = np.array([get_sample(lat_const) for lat_const in lattice_constants]).reshape(-1, 6).astype(np.float32)
+    # samples = torch.from_numpy(samples)
+    samples = np.array([get_sample(lat_const) for lat_const in lattice_constants]).reshape(-1, 6).astype(np.float32)
 
-    output_energies = ensemble_model.evaluate_batch(samples)
+    output_energies = extrapolated_potential.evaluate_batch(samples)
 
     _, ax = plt.subplots()
     ax.plot(lattice_constants, output_energies)
