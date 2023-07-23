@@ -1,3 +1,4 @@
+from typing import Callable
 from typing import Sequence
 
 import numpy as np
@@ -11,8 +12,6 @@ from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.reserved_deque import ReservedDeque
 from nn_fourbody_potential.sidelength_distributions import SixSideLengths
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
-
-from nn_fourbody_potential.transformations.applications import transform_sidelengths_data
 
 
 class EnergyScaleEnsembleModel:
@@ -68,32 +67,53 @@ class EnergyScaleEnsembleModel:
         coarse_energies = self._evaluate_energies(samples, self._full_energy_model)
         self._assign_to_samples_deques(samples, coarse_energies)
 
-        low_samples = torch.stack([elem for elem in self._low_samples_deque])
-        medium_samples = torch.stack([elem for elem in self._medium_samples_deque])
-        high_samples = torch.stack([elem for elem in self._high_samples_deque])
+        low_energies = self._evaluate_samples_in_deque(self._low_samples_deque, self._low_energy_model)
+        medium_energies = self._evaluate_samples_in_deque(self._medium_samples_deque, self._medium_energy_model)
+        high_energies = self._evaluate_samples_in_deque(self._high_samples_deque, self._high_energy_model)
 
-        low_energies = self._evaluate_energies(low_samples, self._low_energy_model)
-        medium_energies = self._evaluate_energies(medium_samples, self._medium_energy_model)
-        high_energies = self._evaluate_energies(high_samples, self._high_energy_model)
+        # if self._low_samples_deque.size != 0:
+        #     low_samples = torch.stack([elem for elem in self._low_samples_deque])
+        #     low_energies = self._evaluate_energies(low_samples, self._low_energy_model)
+        # else:
+        #     low_energies = ReservedDeque[np.float32].from_array(np.array([]), np.float32)
+        #
+        # medium_samples = torch.stack([elem for elem in self._medium_samples_deque])
+        # high_samples = torch.stack([elem for elem in self._high_samples_deque])
+        #
+        # medium_energies = self._evaluate_energies(medium_samples, self._medium_energy_model)
+        # high_energies = self._evaluate_energies(high_samples, self._high_energy_model)
 
         return torch.from_numpy(
             self._evaluate_batch_fine_grained(n_samples, low_energies, medium_energies, high_energies)
         )
 
+    def _evaluate_samples_in_deque(
+        self, samples_deque: ReservedDeque[np.float32], model: Callable[[torch.Tensor], torch.Tensor]
+    ) -> ReservedDeque[np.float32]:
+        """
+        A wrapper around `_evaluate_energies` that unpacks the elements from the deque, handling the
+        empty case that PyTorch likes to complain about.
+        """
+        if samples_deque.size != 0:
+            samples = torch.stack([elem for elem in samples_deque])
+            energies = self._evaluate_energies(samples, model)
+        else:
+            energies = ReservedDeque[np.float32].from_array(np.array([]))
+
+        return energies
+
     def _evaluate_energies(
         self, raw_samples: torch.Tensor, model: RegressionMultilayerPerceptron
     ) -> ReservedDeque[np.float32]:
         if len(raw_samples) != 0:
-            # samples: NDArray = transform_sidelengths_data(raw_samples, self._transformers)
-            # samples = samples.astype(np.float32)
             with torch.no_grad():
-                # samples = torch.from_numpy(raw_samples)
                 energies: torch.Tensor = model(raw_samples)
                 energies = energies.detach().cpu().numpy()
-
-            return ReservedDeque[np.float32].from_array(energies)
+                energies = ReservedDeque[np.float32].from_array(energies)
         else:
-            return ReservedDeque[np.float32].from_array(np.array([]))
+            energies = ReservedDeque[np.float32].from_array(np.array([]))
+
+        return energies
 
     def _assign_to_samples_deques(self, samples: torch.Tensor, coarse_energies: ReservedDeque[np.float32]) -> None:
         for sample, energy in zip(samples, coarse_energies):
