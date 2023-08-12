@@ -88,3 +88,15 @@ TODO:
 
 - increasing the model's size does seem to help
   - keep trying deeper and wider models, and see how far the test error can go down!
+
+
+## 2023-08-11
+
+What kinds of samples should I use to check if the C++ version and the Python version give the same results?
+- empty case
+- one of each range group
+- two of each range group
+- generate 200 random samples, write them into a file
+ - load them from C++ and Python
+ - get the energies and write them out to a file
+ - write another script to compare the energies of the two programs
