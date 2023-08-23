@@ -14,6 +14,7 @@ from typing import Sequence
 from typing import Tuple
 
 import numpy as np
+from numpy.typing import NDArray
 import torch
 
 from nn_fourbody_potential.full_range.constants import SHORT_RANGE_DISTANCE_CUTOFF
@@ -45,7 +46,7 @@ class ExtrapolatedPotential:
 
         self._neural_network.eval()
 
-    def evaluate_batch(self, samples: Sequence[SixSideLengths]) -> Sequence[float]:
+    def evaluate_batch(self, samples: Sequence[SixSideLengths]) -> NDArray:
         interaction_ranges = [classify_interaction_range(sample) for sample in samples]
 
         batch_sidelengths, distance_infos = self._batch_from_interaction_ranges(samples, interaction_ranges)
