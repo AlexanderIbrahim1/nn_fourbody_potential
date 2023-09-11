@@ -29,7 +29,7 @@ def get_training_parameters(
         learning_rate=1.0e-4,
         weight_decay=1.0e-4,
         training_size=model_info.number_of_lines(data_filepath),
-        total_epochs=6000,
+        total_epochs=10000,
         batch_size=2000,
         transformations=data_transforms,
         apply_batch_norm=False,
@@ -67,8 +67,8 @@ def train(
         params,
         model,
         modelpath,
-        save_every=10,
-        continue_training_from_epoch=30,
+        save_every=50,
+        # continue_training_from_epoch=6999,
     )
 
     last_model_filename = get_model_filename(saved_models_dirpath, params.total_epochs - 1)
@@ -77,24 +77,10 @@ def train(
     print(f"test loss rmse = {np.sqrt(test_loss)}")
 
 
-# def train_model(
-#     x_train: torch.Tensor,
-#     y_train: torch.Tensor,
-#     x_valid: torch.Tensor,
-#     y_valid: torch.Tensor,
-#     params: TrainingParameters,
-#     default_model: RegressionMultilayerPerceptron,
-#     modelpath: Path,
-#     *,
-#     save_every: int,
-#     continue_training_from_epoch: Optional[int] = None,
-# ) -> None:
-
-
 if __name__ == "__main__":
-    training_data_filepath = Path("data", "all_energy_train.dat")
-    testing_data_filepath = Path("data", "all_energy_test.dat")
-    validation_data_filepath = Path("data", "all_energy_valid.dat")
-    other_info = "_all_energies_with_continue"
+    training_data_filepath = Path("data", "high_energy_train.dat")
+    testing_data_filepath = Path("data", "high_energy_test.dat")
+    validation_data_filepath = Path("data", "high_energy_valid.dat")
+    other_info = "_high_energies2"
 
     train(training_data_filepath, testing_data_filepath, validation_data_filepath, other_info)
