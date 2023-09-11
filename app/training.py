@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
@@ -15,10 +16,13 @@ from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.models import TrainingParameters
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 
-from nn_fourbody_potential.modelio import ModelSaver
+from nn_fourbody_potential.modelio import CheckpointSaver
+from nn_fourbody_potential.modelio import CheckpointLoader
 from nn_fourbody_potential.modelio import ErrorWriter
 
 from nn_fourbody_potential.transformations import transform_sidelengths_data
+
+import model_info
 
 N_FEATURES = 6
 N_OUTPUTS = 1
@@ -85,30 +89,48 @@ def train_model(
     x_valid: torch.Tensor,
     y_valid: torch.Tensor,
     params: TrainingParameters,
-    model: RegressionMultilayerPerceptron,
+    default_model: RegressionMultilayerPerceptron,
     modelpath: Path,
-    model_saver: ModelSaver,
     *,
     save_every: int,
+    continue_training_from_epoch: Optional[int] = None,
 ) -> None:
     np.random.seed(params.seed)
 
-    training_error_writer = ErrorWriter(modelpath, "training_error_vs_epoch.dat")
-    validation_error_writer = ErrorWriter(modelpath, "validation_error_vs_epoch.dat")
+    saved_models_dirpath = model_info.get_saved_models_dirpath(params)
+    checkpoint_saver = CheckpointSaver(saved_models_dirpath)
+
+    loss_calculator = torch.nn.MSELoss()
+    default_optimizer = torch.optim.Adam(
+        default_model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay
+    )
+
+    if continue_training_from_epoch is not None:
+        checkpoint_loader = CheckpointLoader(saved_models_dirpath)
+        checkpoint_data = checkpoint_loader.load_checkpoint(
+            continue_training_from_epoch, default_model, default_optimizer
+        )
+        epoch_start = checkpoint_data.epoch
+        model = checkpoint_data.model
+        optimizer = checkpoint_data.optimizer
+        error_file_mode = "a"
+    else:
+        epoch_start = 0
+        model = default_model
+        optimizer = default_optimizer
+        error_file_mode = "w"
+
+    training_error_writer = ErrorWriter(modelpath, "training_error_vs_epoch.dat", mode=error_file_mode)
+    validation_error_writer = ErrorWriter(modelpath, "validation_error_vs_epoch.dat", mode=error_file_mode)
 
     trainset = PotentialDataset(x_train, y_train)
     trainloader = DataLoader(trainset, batch_size=params.batch_size, shuffle=True, num_workers=1)
 
-    loss_calculator = torch.nn.MSELoss()
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=params.learning_rate
-    )  # , weight_decay=params.weight_decay) # TODO: turn weight decay back on
-
-    for i_epoch in range(params.total_epochs):
+    for i_epoch in range(epoch_start, params.total_epochs):
         for x_batch, y_batch in trainloader:
             y_batch_predicted = model(x_batch)
 
-            loss = loss_calculator(y_batch, y_batch_predicted)
+            loss: torch.Tensor = loss_calculator(y_batch, y_batch_predicted)
             loss.backward()
 
             optimizer.step()
@@ -120,13 +142,13 @@ def train_model(
         epoch_validation_loss = evaluate_model_loss(model, loss_calculator, x_valid, y_valid)
         validation_error_writer.append(i_epoch, epoch_validation_loss)
 
-        print(f"(epoch, training_loss) = ({i_epoch}, {epoch_training_loss:.4f})")
+        print(f"(epoch, training_loss)   = ({i_epoch}, {epoch_training_loss:.4f})")
         print(f"(epoch, validation_loss) = ({i_epoch}, {epoch_validation_loss:.4f})")
 
         if i_epoch % save_every == 0 and i_epoch != 0:
-            model_saver.save_model(model, epoch=i_epoch)
+            checkpoint_saver.save_checkpoint(model=model, optimizer=optimizer, epoch=i_epoch)
 
-    model_saver.save_model(model, epoch=params.total_epochs - 1)
+    checkpoint_saver.save_checkpoint(model=model, optimizer=optimizer, epoch=params.total_epochs - 1)
 
 
 def test_model(
@@ -135,7 +157,8 @@ def test_model(
     model: RegressionMultilayerPerceptron,
     modelfile: Path,
 ) -> None:
-    model.load_state_dict(torch.load(modelfile))
+    checkpoint = torch.load(modelfile)
+    model.load_state_dict(checkpoint["model_state_dict"])
     loss_calculator = torch.nn.MSELoss()
 
     testing_loss = evaluate_model_loss(model, loss_calculator, x_test, y_test)
