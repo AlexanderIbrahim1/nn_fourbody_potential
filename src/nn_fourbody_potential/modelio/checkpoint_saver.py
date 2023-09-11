@@ -17,10 +17,13 @@ class CheckpointSaver:
     savepath: Path
 
     def save_checkpoint(
-        self, *, model: RegressionMultilayerPerceptron, optimizer: torch.optim.Optimizer, epoch: int, loss: float
+        self,
+        *,
+        model: RegressionMultilayerPerceptron,
+        optimizer: torch.optim.Optimizer,
+        epoch: int,
     ) -> None:
         assert epoch >= 0
-        assert loss >= 0.0
 
         if not self.savepath.exists():
             self.savepath.mkdir()
@@ -31,7 +34,6 @@ class CheckpointSaver:
             "model_state_dict": model.state_dict(),
             "optimizer_state_dict": optimizer.state_dict(),
             "epoch": epoch,
-            "loss": loss,
         }
 
         torch.save(checkpoint_dict, model_filename)

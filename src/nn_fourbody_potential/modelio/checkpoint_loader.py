@@ -12,7 +12,6 @@ class CheckpointData:
     model: RegressionMultilayerPerceptron
     optimizer: torch.optim.Optimizer
     epoch: int
-    loss: float
 
 
 @dataclass(frozen=True)
@@ -33,6 +32,5 @@ class CheckpointLoader:
         model.load_state_dict(checkpoint["model_state_dict"])
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
         epoch = checkpoint["epoch"]
-        loss = checkpoint["loss"]
 
-        return CheckpointData(model, optimizer, epoch, loss)
+        return CheckpointData(model, optimizer, epoch)
