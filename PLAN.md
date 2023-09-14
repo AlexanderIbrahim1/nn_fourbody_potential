@@ -89,14 +89,25 @@ TODO:
 - increasing the model's size does seem to help
   - keep trying deeper and wider models, and see how far the test error can go down!
 
-
 ## 2023-08-11
 
-What kinds of samples should I use to check if the C++ version and the Python version give the same results?
-- empty case
-- one of each range group
-- two of each range group
-- generate 200 random samples, write them into a file
- - load them from C++ and Python
- - get the energies and write them out to a file
- - write another script to compare the energies of the two programs
+- What kinds of samples should I use to check if the C++ version and the Python version give the same results?
+  - empty case
+  - one of each range group
+  - two of each range group
+  - generate 200 random samples, write them into a file
+    - load them from C++ and Python
+    - get the energies and write them out to a file
+    - write another script to compare the energies of the two programs
+
+## 2023-09-14
+
+- I want to train a neural network where the energies are rescaled by the toy exponential decay potential
+- this should bring all the energies to within a similar range of values
+- the training should be more effective than it is now
+- I might even be able to get rid of the ensemble potential
+
+- One drawback of this rescaling is that we might not want the high and low energies on an equal footing
+  - we might end up in a situation where predictions for the low energy samples become more accurate at the expense
+    of the predictions of the high energy samples
+  - but we won't know this until we try it out
