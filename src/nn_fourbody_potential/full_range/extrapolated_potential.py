@@ -39,10 +39,13 @@ class ExtrapolatedPotential:
         self,
         neural_network: Callable[[torch.Tensor], torch.Tensor],
         transformers: Sequence[SixSideLengthsTransformer],
+        *,
+        pass_in_sidelengths_to_network: bool = False,
     ) -> None:
         self._neural_network = neural_network
         self._transformers = transformers
         self._long_range_corrector = LongRangeEnergyCorrector()
+        self._pass_in_sidelengths_to_network = pass_in_sidelengths_to_network
 
         self._neural_network.eval()
 
@@ -124,7 +127,13 @@ class ExtrapolatedPotential:
             )  # NOTE: I think it's already of type np.float32?
 
             with torch.no_grad():
-                output_data: torch.Tensor = self._neural_network(input_data)
+                if self._pass_in_sidelengths_to_network:
+                    output_data: torch.Tensor = self._neural_network(
+                        input_data, torch.Tensor(batch_sidelengths.elements)
+                    )
+                else:
+                    output_data: torch.Tensor = self._neural_network(input_data)
+
                 output_energies = output_data.detach().cpu().numpy()  # NOTE: is .cpu() making too many assumptions?
         else:
             output_energies = np.array([])
