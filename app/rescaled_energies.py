@@ -40,7 +40,7 @@ def get_training_parameters(
     return TrainingParameters(
         seed=0,
         layers=[64, 128, 128, 64],
-        learning_rate=2.0e-4,
+        learning_rate=5.0e-4,
         weight_decay=1.0e-4,
         training_size=model_info.number_of_lines(data_filepath),
         total_epochs=1000,
@@ -52,9 +52,9 @@ def get_training_parameters(
 
 
 def get_toy_decay_potential() -> RescalingPotential:
-    coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 3.0
-    expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 6.0
-    disp_coeff = 20.0 * c12_parahydrogen_midzuno_kihara()
+    coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0
+    expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.0
+    disp_coeff = 0.1 * c12_parahydrogen_midzuno_kihara()
 
     return RescalingPotential(coeff, expon, disp_coeff)
 
@@ -89,16 +89,41 @@ def pruned_data(
     return x_data_filtered, y_data_filtered
 
 
-def linear_map(from_left: float, from_right: float, to_left: float, to_right: float) -> Callable[[float], float]:
-    slope = (to_right - to_left) / (from_right - from_left)
-
-    return lambda x: (x - from_left) * slope + to_left
-
-
 @dataclass
-class RescaledLimits:
-    lower: float
-    upper: float
+class RescalingLimits:
+    from_left: float
+    from_right: float
+    to_left: float
+    to_right: float
+
+
+def linear_map(res_limits: RescalingLimits) -> Callable[[float], float]:
+    slope = (res_limits.to_right - res_limits.to_left) / (res_limits.from_right - res_limits.from_left)
+
+    return lambda x: (x - res_limits.from_left) * slope + res_limits.to_left
+
+
+class InverseEnergyRescaler:
+    def __init__(
+        self,
+        rescaling_potential: RescalingPotential,
+        res_limits: RescalingLimits,
+    ) -> None:
+        self._rescaling_potential = rescaling_potential
+
+        inv_res_limits = RescalingLimits(
+            res_limits.to_left,
+            res_limits.to_right,
+            res_limits.from_left,
+            res_limits.from_right,
+        )
+        self._lin_map = linear_map(inv_res_limits)
+
+    def __call__(self, rescaled_energy: float, *six_pair_distances: float) -> float:
+        rescale_value = self._rescaling_potential(*six_pair_distances)
+        unscaled_energy = self._lin_map(rescaled_energy) * rescale_value
+
+        return unscaled_energy
 
 
 def prepared_data(
@@ -106,8 +131,8 @@ def prepared_data(
     sidelength_transforms: Sequence[SixSideLengthsTransformer],
     allow_predicate: Callable[[float, float], bool],
     rescaling_potential: RescalingPotential,
-    rescaled_limits: Optional[RescaledLimits] = None,
-) -> tuple[torch.Tensor, torch.Tensor, RescaledLimits]:
+    rescaled_limits: Optional[RescalingLimits] = None,
+) -> tuple[torch.Tensor, torch.Tensor, RescalingLimits]:
     x_raw, energies_raw = training.prepared_data(data_filepath, sidelength_transforms)
     sidelengths, _ = training.prepared_data(data_filepath, [])
 
@@ -116,20 +141,31 @@ def prepared_data(
 
     energies_rescaled = rescaled_energies(rescaling_potential, sidelengths_pruned, energies_pruned)
 
+    # order = np.argsort(energies_rescaled.flatten().abs())
+    # sidelengths_pruned = sidelengths_pruned[order]
+    # energies_rescaled = energies_rescaled[order]
+
+    # for s, e in zip(sidelengths_pruned[:100], energies_rescaled[:100]):
+    #     print(s.mean().item(), e.item())
+
+    # abs_min = energies_rescaled.abs().min().item()
+    # abs_max = energies_rescaled.abs().max().item()
+    # print(abs_min, abs_max, abs_max / abs_min)
+    # exit()
+
     if rescaled_limits is None:
         min_resc_eng = energies_rescaled.min().item()
         max_resc_eng = energies_rescaled.max().item()
+        res_limits = RescalingLimits(min_resc_eng, max_resc_eng, -1.0, 1.0)
     else:
-        min_resc_eng = rescaled_limits.lower
-        max_resc_eng = rescaled_limits.upper
+        res_limits = copy.deepcopy(rescaled_limits)
 
-    ret_limits = RescaledLimits(min_resc_eng, max_resc_eng)
-    lin_map = linear_map(min_resc_eng, max_resc_eng, -1.0, 1.0)
+    lin_map = linear_map(res_limits)  # noqa
 
     for i, eng in enumerate(energies_rescaled):
         energies_rescaled[i] = lin_map(eng)
 
-    return (x_pruned, energies_rescaled, ret_limits)
+    return (x_pruned, energies_rescaled, res_limits)
 
 
 # create function that gets prepared data, but also:
@@ -149,7 +185,7 @@ def train_with_rescaling() -> None:
     training_data_filepath = Path("energy_separation", "data", "all_energy_train.dat")
     testing_data_filepath = Path("energy_separation", "data", "all_energy_test.dat")
     validation_data_filepath = Path("energy_separation", "data", "all_energy_valid.dat")
-    other_info = "_rescaled_model_all"
+    other_info = "_rescaled_model_all2"
 
     allow_predicate = lambda energy, avg_dist: abs(energy) >= 1.0e-3 and avg_dist <= 4.5
     rescaling_potential = get_toy_decay_potential()
@@ -157,17 +193,19 @@ def train_with_rescaling() -> None:
     transforms = model_info.get_data_transforms()
     params = get_training_parameters(training_data_filepath, transforms, other_info)
 
-    x_train, y_train, ret_limits = prepared_data(
+    x_train, y_train, res_limits = prepared_data(
         training_data_filepath, transforms, allow_predicate, rescaling_potential
     )
     x_test, y_test, _ = prepared_data(
-        testing_data_filepath, transforms, allow_predicate, rescaling_potential, ret_limits
+        testing_data_filepath, transforms, allow_predicate, rescaling_potential, res_limits
     )
     x_valid, y_valid, _ = prepared_data(
-        validation_data_filepath, transforms, allow_predicate, rescaling_potential, ret_limits
+        validation_data_filepath, transforms, allow_predicate, rescaling_potential, res_limits
     )
 
-    print(ret_limits)
+    inv_eng_rescaler = InverseEnergyRescaler(rescaling_potential, res_limits)
+    print(inv_eng_rescaler(y_train[0].item(), 3.1, 3.1, 3.1, 3.1, 3.1, 3.1))
+    exit()
 
     model = RegressionMultilayerPerceptron(training.N_FEATURES, training.N_OUTPUTS, params.layers)
 
@@ -201,85 +239,39 @@ def train_with_rescaling() -> None:
 if __name__ == "__main__":
     train_with_rescaling()
 
-#
-#
-# def train_with_fast_decay_data() -> None:
-#     training_data_filepath = model_info.get_training_data_filepath()
-#     hcp_data_filepath = model_info.get_hcp_data_filepath()
-#     validation_data_filepath = model_info.get_validation_data_filepath()
-#     testing_data_filepath = model_info.get_testing_data_filepath()
-#
-#     fastdecay_training_data_filepath = model_info.get_fastdecay_training_data_filepath()
-#     fastdecay_testing_data_filepath = model_info.get_fastdecay_testing_data_filepath()
-#     fastdecay_validation_data_filepath = model_info.get_fastdecay_validation_data_filepath()
-#     veryfastdecay_training_data_filepath = model_info.get_veryfastdecay_training_data_filepath()
-#     veryfastdecay_testing_data_filepath = model_info.get_veryfastdecay_testing_data_filepath()
-#     veryfastdecay_validation_data_filepath = model_info.get_veryfastdecay_validation_data_filepath()
-#
-#     transforms = model_info.get_data_transforms()
-#     params = model_info.get_training_parameters(training_data_filepath, transforms)
-#
-#     x_train_hcp, y_train_hcp = training.prepared_data(hcp_data_filepath, transforms)
-#     x_train_gen, y_train_gen = training.prepared_data(training_data_filepath, transforms)
-#     x_valid, y_valid = training.prepared_data(validation_data_filepath, transforms)
-#     x_test, y_test = training.prepared_data(testing_data_filepath, transforms)
-#     x_fastdecay_test, y_fastdecay_test = training.prepared_data(fastdecay_testing_data_filepath, transforms)
-#     x_fastdecay_train, y_fastdecay_train = training.prepared_data(fastdecay_training_data_filepath, transforms)
-#     x_fastdecay_valid, y_fastdecay_valid = training.prepared_data(fastdecay_validation_data_filepath, transforms)
-#     x_veryfastdecay_test, y_veryfastdecay_test = training.prepared_data(veryfastdecay_testing_data_filepath, transforms)
-#     x_veryfastdecay_train, y_veryfastdecay_train = training.prepared_data(
-#         veryfastdecay_training_data_filepath, transforms
-#     )
-#     x_veryfastdecay_valid, y_veryfastdecay_valid = training.prepared_data(
-#         veryfastdecay_validation_data_filepath, transforms
-#     )
-#
-#     # hcp_mask = torch.Tensor(
-#     #     [
-#     #         prune.sidelengths_filter(sidelens, 4.2) and prune.energy_filter(energy, 1.0e-3)
-#     #         for (sidelens, energy) in zip(x_train_hcp, y_train_hcp)
-#     #     ]
-#     # )
-#     # x_train_hcp = x_train_hcp[torch.nonzero(hcp_mask).reshape(-1)]
-#     # y_train_hcp = y_train_hcp[torch.nonzero(hcp_mask).reshape(-1)]
-#
-#     x_train = torch.concatenate((x_train_gen, x_train_hcp, x_fastdecay_train, x_veryfastdecay_train))
-#     y_train = torch.concatenate((y_train_gen, y_train_hcp, y_fastdecay_train, y_veryfastdecay_train))
-#     x_valid = torch.concatenate((x_valid, x_fastdecay_valid, x_veryfastdecay_valid))
-#     y_valid = torch.concatenate((y_valid, y_fastdecay_valid, y_veryfastdecay_valid))
-#     x_test = torch.concatenate((x_test, x_fastdecay_test, x_veryfastdecay_test))
-#     y_test = torch.concatenate((y_test, y_fastdecay_test, y_veryfastdecay_test))
-#
-#     model = RegressionMultilayerPerceptron(training.N_FEATURES, training.N_OUTPUTS, params.layers)
-#
-#     modelpath = model_info.get_path_to_model(params)
-#     if not modelpath.exists():
-#         modelpath.mkdir()
-#
-#     training_parameters_filepath = model_info.get_training_parameters_filepath(params)
-#
-#     saved_models_dirpath = model_info.get_saved_models_dirpath(params)
-#     model_saver = ModelSaver(saved_models_dirpath)
-#
-#     write_training_parameters(training_parameters_filepath, params, overwrite=False)
-#     training.train_model(
-#         x_train,
-#         y_train,
-#         x_valid,
-#         y_valid,
-#         params,
-#         model,
-#         modelpath,
-#         model_saver,
-#         save_every=20,
-#     )
-#
-#     last_model_filename = model_saver.get_model_filename(params.total_epochs - 1)
-#     test_loss = training.test_model(x_test, y_test, model, last_model_filename)
-#     print(f"test loss mse = {test_loss}")
-#     print(f"test loss rmse = {np.sqrt(test_loss)}")
-#
-#
-# if __name__ == "__main__":
-#     train_with_fast_decay_data()
-#
+
+# TODO: complete
+class RescalingEnergyModel:
+    def __init__(
+        self,
+        max_n_samples: int,
+        rescaled_model: RegressionMultilayerPerceptron,
+        inverse_rescaler: InverseEnergyRescaler,
+    ) -> None:
+        self._check_max_n_samples(max_n_samples)
+
+        self._max_n_samples = max_n_samples
+        self._rescaled_model = rescaled_model
+        self._inverse_rescaler = inverse_rescaler
+
+    def __call__(self, samples: torch.Tensor, sidelength_groups: torch.Tensor) -> torch.Tensor:
+        n_samples = len(samples)
+
+        if n_samples == 0:
+            return torch.Tensor([])
+
+        self._rescaled_model.eval()
+        with torch.no_grad:
+            rescaled_energies = self._rescaled_model.forward(samples)
+
+        for i, (eng, sidelengths) in enumerate(zip(rescaled_energies, sidelength_groups)):
+            rescaled_energies[i] = self._inverse_rescaler(eng.item(), *(sidelengths.item()))
+        rescaled_energies.apply_(
+            lambda x: self._inverse_rescaler(
+                x.item(),
+            )
+        )
+
+    def _check_max_n_samples(self, max_n_samples: int) -> None:
+        if max_n_samples <= 0:
+            raise ValueError("The buffer size for the calculations must be a positive number.")
