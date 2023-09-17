@@ -26,7 +26,7 @@ def get_training_parameters(
     return TrainingParameters(
         seed=0,
         layers=[64, 128, 128, 64],
-        learning_rate=1.0e-4,
+        learning_rate=2.0e-4,
         weight_decay=1.0e-4,
         training_size=model_info.number_of_lines(data_filepath),
         total_epochs=10000,
@@ -52,10 +52,9 @@ def train(
     if not modelpath.exists():
         modelpath.mkdir()
 
-    training_parameters_filepath = model_info.get_training_parameters_filepath(params)
-
     saved_models_dirpath = model_info.get_saved_models_dirpath(params)
 
+    training_parameters_filepath = model_info.get_training_parameters_filepath(params)
     if not training_parameters_filepath.exists():
         write_training_parameters(training_parameters_filepath, params, overwrite=False)
 
@@ -68,7 +67,7 @@ def train(
         model,
         modelpath,
         save_every=50,
-        # continue_training_from_epoch=6999,
+        # continue_training_from_epoch=5200,
     )
 
     last_model_filename = get_model_filename(saved_models_dirpath, params.total_epochs - 1)
