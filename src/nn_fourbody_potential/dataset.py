@@ -7,11 +7,7 @@ class PotentialDataset(Dataset):
     single output dimension.
     """
 
-    def __init__(
-        self,
-        x,
-        y,
-    ) -> None:
+    def __init__(self, x, y) -> None:
         self.x = x
         self.y = y
 
@@ -19,4 +15,6 @@ class PotentialDataset(Dataset):
         return len(self.x)
 
     def __getitem__(self, index):
-        return (self.x[index], self.y[index])
+        x_output = self.x[index]
+        y_output = self.y[index]
+        return x_output, y_output
