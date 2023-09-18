@@ -1,11 +1,9 @@
-from pathlib import Path
 from typing import Sequence
 
 import numpy as np
 from numpy.typing import NDArray
 import torch
 
-from nn_fourbody_potential.dataio import load_fourbody_training_data
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations import transform_sidelengths_data
 
@@ -82,6 +80,30 @@ def prepare_rescaled_data(
     energies.apply_(fwd_linear_map)
 
     return (trans_side_length_groups, energies, fwd_rescaling_limits)
+
+
+def prepare_rescaled_data_with_rescaling_limits(
+    _side_length_groups: NDArray,
+    _energies: NDArray,
+    transformers: Sequence[SixSideLengthsTransformer],
+    res_potential: RescalingPotential,
+    forward_res_limits: RescalingLimits,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Similar to `prepare_rescaled_data()`, but the RescalingLimits instance is passed in and used,
+    instead of created from the data.
+    """
+    trans_side_length_groups = transform_sidelengths_data(_side_length_groups, transformers)
+    energies = _energies.reshape(_energies.size, -1)
+
+    side_length_groups = torch.from_numpy(_side_length_groups.astype(np.float32))
+    trans_side_length_groups = torch.from_numpy(trans_side_length_groups.astype(np.float32))
+    energies = torch.from_numpy(energies.astype(np.float32))
+
+    forward_rescaler = ForwardEnergyRescaler(res_potential, forward_res_limits)
+    forward_rescale_energies_(forward_rescaler, side_length_groups, energies)
+
+    return (trans_side_length_groups, energies)
 
 
 def _forward_rescaling_limits(reduced_energies: torch.Tensor) -> RescalingLimits:

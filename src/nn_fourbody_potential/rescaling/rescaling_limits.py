@@ -4,7 +4,6 @@ that concern themselves with the rescaling of energies.
 """
 
 import dataclasses
-from typing import Callable
 
 
 @dataclasses.dataclass
