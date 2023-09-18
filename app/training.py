@@ -124,7 +124,7 @@ def train_model(
     validation_error_writer = ErrorWriter(modelpath, "validation_error_vs_epoch.dat", mode=error_file_mode)
 
     trainset = PotentialDataset(x_train, y_train)
-    trainloader = DataLoader(trainset, batch_size=params.batch_size, shuffle=True, num_workers=1)
+    trainloader = DataLoader(trainset, batch_size=params.batch_size, num_workers=0, shuffle=True)
 
     for i_epoch in range(epoch_start, params.total_epochs):
         for x_batch, y_batch in trainloader:
@@ -142,8 +142,8 @@ def train_model(
         epoch_validation_loss = evaluate_model_loss(model, loss_calculator, x_valid, y_valid)
         validation_error_writer.append(i_epoch, epoch_validation_loss)
 
-        print(f"(epoch, training_loss)   = ({i_epoch}, {epoch_training_loss:.4f})")
-        print(f"(epoch, validation_loss) = ({i_epoch}, {epoch_validation_loss:.4f})")
+        print(f"(epoch, training_loss)   = ({i_epoch}, {epoch_training_loss:.8f})")
+        print(f"(epoch, validation_loss) = ({i_epoch}, {epoch_validation_loss:.8f})")
 
         if i_epoch % save_every == 0 and i_epoch != 0:
             checkpoint_saver.save_checkpoint(model=model, optimizer=optimizer, epoch=i_epoch)

@@ -8,8 +8,11 @@ values, thus making the training more effective.
 
 from __future__ import annotations
 
+import os
+
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+
 import copy
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 from typing import Optional
@@ -27,8 +30,8 @@ from nn_fourbody_potential.modelio import write_training_parameters
 from nn_fourbody_potential.modelio.utils import get_model_filename
 from nn_fourbody_potential.models import TrainingParameters
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
-from nn_fourbody_potential.rescaling_potential import RescalingPotential
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
+from nn_fourbody_potential import rescaling
 
 import model_info
 import training
@@ -42,35 +45,25 @@ def get_training_parameters(
     return TrainingParameters(
         seed=0,
         layers=[64, 128, 128, 64],
-        learning_rate=5.0e-4,
+        learning_rate=2.0e-4,
         weight_decay=1.0e-4,
         training_size=model_info.number_of_lines(data_filepath),
         total_epochs=1000,
-        batch_size=2000,
+        batch_size=4096,
         transformations=data_transforms,
         apply_batch_norm=False,
         other=other_info,
     )
 
 
-def get_toy_decay_potential() -> RescalingPotential:
+def get_toy_decay_potential() -> rescaling.RescalingPotential:
+    # constants chosen so that the ratio of the absolute values of the minimum and maximum reduced
+    # energies is the lowest possible
     coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0
-    expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.0
-    disp_coeff = 0.1 * c12_parahydrogen_midzuno_kihara()
+    expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.02
+    disp_coeff = 1.0 * c12_parahydrogen_midzuno_kihara()
 
-    return RescalingPotential(coeff, expon, disp_coeff)
-
-
-def rescaled_energies(
-    potential: RescalingPotential, side_length_groups: torch.Tensor, energies: torch.Tensor
-) -> torch.Tensor:
-    rescaled = copy.deepcopy(energies)
-
-    for i, side_lengths in enumerate(side_length_groups):
-        rescale_value = potential(*(s.item() for s in side_lengths))
-        rescaled[i] /= rescale_value
-
-    return rescaled
+    return rescaling.RescalingPotential(coeff, expon, disp_coeff)
 
 
 def pruned_data(
@@ -91,35 +84,14 @@ def pruned_data(
     return x_data_filtered, y_data_filtered
 
 
-@dataclass
-class RescalingLimits:
-    from_left: float
-    from_right: float
-    to_left: float
-    to_right: float
-
-
-def linear_map(res_limits: RescalingLimits) -> Callable[[float], float]:
-    slope = (res_limits.to_right - res_limits.to_left) / (res_limits.from_right - res_limits.from_left)
-
-    return lambda x: (x - res_limits.from_left) * slope + res_limits.to_left
-
-
 class InverseEnergyRescaler:
     def __init__(
         self,
-        rescaling_potential: RescalingPotential,
-        res_limits: RescalingLimits,
+        rescaling_potential: rescaling.RescalingPotential,
+        res_limits: rescaling.RescalingLimits,
     ) -> None:
         self._rescaling_potential = rescaling_potential
-
-        inv_res_limits = RescalingLimits(
-            res_limits.to_left,
-            res_limits.to_right,
-            res_limits.from_left,
-            res_limits.from_right,
-        )
-        self._lin_map = linear_map(inv_res_limits)
+        self._lin_map = rescaling.LinearMap(rescaling.invert_rescaling_limits(res_limits))
 
     def __call__(self, rescaled_energy: float, *six_pair_distances: float) -> float:
         rescale_value = self._rescaling_potential(*six_pair_distances)
@@ -128,87 +100,75 @@ class InverseEnergyRescaler:
         return unscaled_energy
 
 
-def prepared_data(
-    data_filepath: Path,
-    sidelength_transforms: Sequence[SixSideLengthsTransformer],
-    allow_predicate: Callable[[float, float], bool],
-    rescaling_potential: RescalingPotential,
-    rescaled_limits: Optional[RescalingLimits] = None,
-) -> tuple[torch.Tensor, torch.Tensor, RescalingLimits]:
-    x_raw, energies_raw = training.prepared_data(data_filepath, sidelength_transforms)
-    sidelengths, _ = training.prepared_data(data_filepath, [])
-
-    x_pruned, energies_pruned = pruned_data(sidelengths, x_raw, energies_raw, allow_predicate)
-    sidelengths_pruned, _ = pruned_data(sidelengths, sidelengths, energies_raw, allow_predicate)
-
-    energies_rescaled = rescaled_energies(rescaling_potential, sidelengths_pruned, energies_pruned)
-
-    # order = np.argsort(energies_rescaled.flatten().abs())
-    # sidelengths_pruned = sidelengths_pruned[order]
-    # energies_rescaled = energies_rescaled[order]
-
-    # for s, e in zip(sidelengths_pruned[:100], energies_rescaled[:100]):
-    #     print(s.mean().item(), e.item())
-
-    # abs_min = energies_rescaled.abs().min().item()
-    # abs_max = energies_rescaled.abs().max().item()
-    # print(abs_min, abs_max, abs_max / abs_min)
-    # exit()
-
-    if rescaled_limits is None:
-        min_resc_eng = energies_rescaled.min().item()
-        max_resc_eng = energies_rescaled.max().item()
-        res_limits = RescalingLimits(min_resc_eng, max_resc_eng, -1.0, 1.0)
-    else:
-        res_limits = copy.deepcopy(rescaled_limits)
-
-    lin_map = linear_map(res_limits)  # noqa
-
-    for i, eng in enumerate(energies_rescaled):
-        energies_rescaled[i] = lin_map(eng)
-
-    return (x_pruned, energies_rescaled, res_limits)
-
-
-# create function that gets prepared data, but also:
-# - applies a filter to prune small energies
-# - applies the rescaling potential
-# - applies a normalization (and returns the normalization limits)
+# def prepared_data(
+#     data_filepath: Path,
+#     sidelength_transforms: Sequence[SixSideLengthsTransformer],
+#     allow_predicate: Callable[[float, float], bool],
+#     rescaling_potential: rescaling.RescalingPotential,
+#     rescaled_limits: Optional[rescaling.RescalingLimits] = None,
+# ) -> tuple[torch.Tensor, torch.Tensor, rescaling.RescalingLimits]:
+#     x_raw, energies_raw = training.prepared_data(data_filepath, sidelength_transforms)
+#     sidelengths, _ = training.prepared_data(data_filepath, [])
 #
-# the rescaling potential, obviously, rescales the energies
-# - originally, there are energies from ~200 wvn to 1.0e-3 wvn (5 OOM)
-# - hopefully, the rescaling will put them all within 1 or 2 OOM
-# - the relative weight between the exponential and dispersion parts can be used to emphasize the relative importance of small and large energies
+#     x_pruned, energies_pruned = pruned_data(sidelengths, x_raw, energies_raw, allow_predicate)
+#     sidelengths_pruned, _ = pruned_data(sidelengths, sidelengths, energies_raw, allow_predicate)
 #
-# NOTE: the long range pruning should take into account the mixing between the NN and the dispersion potential
+#     energies_rescaled = rescaled_energies(rescaling_potential, sidelengths_pruned, energies_pruned)
+#
+#     if rescaled_limits is None:
+#         min_resc_eng = energies_rescaled.min().item()
+#         max_resc_eng = energies_rescaled.max().item()
+#         res_limits = rescaling.RescalingLimits(min_resc_eng, max_resc_eng, -1.0, 1.0)
+#     else:
+#         res_limits = copy.deepcopy(rescaled_limits)
+#
+#     lin_map = rescaling.LinearMap(res_limits)  # noqa
+#
+#     for i, eng in enumerate(energies_rescaled):
+#         energies_rescaled[i] = lin_map(eng)
+#
+#     return (x_pruned, energies_rescaled, res_limits)
 
 
 def train_with_rescaling() -> None:
-    training_data_filepath = Path("energy_separation", "data", "all_energy_train.dat")
-    testing_data_filepath = Path("energy_separation", "data", "all_energy_test.dat")
-    validation_data_filepath = Path("energy_separation", "data", "all_energy_valid.dat")
-    other_info = "_rescaled_model_all2"
+    training_data_filepath = Path("energy_separation", "data", "all_energy_train_filtered.dat")
+    testing_data_filepath = Path("energy_separation", "data", "all_energy_test_filtered.dat")
+    validation_data_filepath = Path("energy_separation", "data", "all_energy_valid_filtered.dat")
+    other_info = "_rescaled_model_all3"
 
-    allow_predicate = lambda energy, avg_dist: abs(energy) >= 1.0e-3 and avg_dist <= 4.5
     rescaling_potential = get_toy_decay_potential()
 
     transforms = model_info.get_data_transforms()
     params = get_training_parameters(training_data_filepath, transforms, other_info)
 
-    x_train, y_train, res_limits = prepared_data(
-        training_data_filepath, transforms, allow_predicate, rescaling_potential
+    side_length_groups_train, energies_train = training.load_fourbody_training_data(training_data_filepath)
+    side_length_groups_test, energies_test = training.load_fourbody_training_data(testing_data_filepath)
+    side_length_groups_valid, energies_valid = training.load_fourbody_training_data(validation_data_filepath)
+
+    x_train, y_train, res_limits = rescaling.prepare_rescaled_data(
+        side_length_groups_train, energies_train, transforms, rescaling_potential
     )
     print(res_limits)
-    x_test, y_test, _ = prepared_data(
-        testing_data_filepath, transforms, allow_predicate, rescaling_potential, res_limits
-    )
-    x_valid, y_valid, _ = prepared_data(
-        validation_data_filepath, transforms, allow_predicate, rescaling_potential, res_limits
+
+    x_test, y_test = rescaling.prepare_rescaled_data_with_rescaling_limits(
+        side_length_groups_test, energies_test, transforms, rescaling_potential, res_limits
     )
 
-    inv_eng_rescaler = InverseEnergyRescaler(rescaling_potential, res_limits)
+    x_valid, y_valid = rescaling.prepare_rescaled_data_with_rescaling_limits(
+        side_length_groups_valid, energies_valid, transforms, rescaling_potential, res_limits
+    )
 
     model = RegressionMultilayerPerceptron(training.N_FEATURES, training.N_OUTPUTS, params.layers)
+
+    # moving everything to the GPU
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    x_train = x_train.to(device)
+    y_train = y_train.to(device)
+    x_test = x_test.to(device)
+    y_test = y_test.to(device)
+    x_valid = x_valid.to(device)
+    y_valid = y_valid.to(device)
+    model = model.to(device)
 
     modelpath = model_info.get_path_to_model(params)
     if not modelpath.exists():
@@ -275,26 +235,29 @@ class RescalingEnergyModel:
 
 
 if __name__ == "__main__":
-    res_limits = RescalingLimits(from_left=-3.100146532058716, from_right=8.271796226501465, to_left=-1.0, to_right=1.0)
-    rescaling_potential = get_toy_decay_potential()
-    inv_eng_rescaler = InverseEnergyRescaler(rescaling_potential, res_limits)
-
-    model_filename = Path(
-        "/home/a68ibrah/research/four_body_interactions/nn_fourbody_potential/app/models/nnpes_rescaled_model_all2_layers64_128_128_64_lr_0.000500_datasize_15101/models/nnpes_00999.pth"
-    )
-    checkpoint = torch.load(model_filename)
-    model = RegressionMultilayerPerceptron(training.N_FEATURES, training.N_OUTPUTS, [64, 128, 128, 64])
-    model.load_state_dict(checkpoint["model_state_dict"])
-
-    energy_model = RescalingEnergyModel(1024, model, inv_eng_rescaler)
-
-    transforms = model_info.get_data_transforms()
-    extrapolated_potential = ExtrapolatedPotential(energy_model, transforms, pass_in_sidelengths_to_network=True)
-
-    sidelengths = np.linspace(1.9, 5.0, 256)
-    sidelength_groups = np.array([(s, s, s, s, s, s) for s in sidelengths]).reshape(-1, 6).astype(np.float32)
-    output_energies = extrapolated_potential.evaluate_batch(sidelength_groups)
-
-    _, ax = plt.subplots()
-    ax.plot(sidelengths, output_energies)
-    plt.show()
+    train_with_rescaling()
+#     res_limits = rescaling.RescalingLimits(
+#         from_left=-3.100146532058716, from_right=8.271796226501465, to_left=-1.0, to_right=1.0
+#     )
+#     rescaling_potential = get_toy_decay_potential()
+#     inv_eng_rescaler = InverseEnergyRescaler(rescaling_potential, res_limits)
+#
+#     model_filename = Path(
+#         "/home/a68ibrah/research/four_body_interactions/nn_fourbody_potential/app/models/nnpes_rescaled_model_all2_layers64_128_128_64_lr_0.000500_datasize_15101/models/nnpes_00999.pth"
+#     )
+#     checkpoint = torch.load(model_filename)
+#     model = RegressionMultilayerPerceptron(training.N_FEATURES, training.N_OUTPUTS, [64, 128, 128, 64])
+#     model.load_state_dict(checkpoint["model_state_dict"])
+#
+#     energy_model = RescalingEnergyModel(1024, model, inv_eng_rescaler)
+#
+#     transforms = model_info.get_data_transforms()
+#     extrapolated_potential = ExtrapolatedPotential(energy_model, transforms, pass_in_sidelengths_to_network=True)
+#
+#     sidelengths = np.linspace(1.9, 5.0, 256)
+#     sidelength_groups = np.array([(s, s, s, s, s, s) for s in sidelengths]).reshape(-1, 6).astype(np.float32)
+#     output_energies = extrapolated_potential.evaluate_batch(sidelength_groups)
+#
+#     _, ax = plt.subplots()
+#     ax.plot(sidelengths, output_energies)
+#     plt.show()
