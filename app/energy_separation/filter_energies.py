@@ -13,6 +13,7 @@ from typing import Union
 import numpy as np
 
 from nn_fourbody_potential.dataio import load_fourbody_training_data
+from nn_fourbody_potential.dataio import save_fourbody_training_data
 
 
 @dataclass
@@ -51,10 +52,38 @@ def get_sample_statistics(
     )
 
 
-if __name__ == "__main__":
-    energy_filepath = Path(".", "data", "all_energy_valid.dat")
-    energy_predicate = lambda e: abs(e) < 1.0e-3
-    distance_predicate = lambda s: s < 4.5
+def write_pruned_data_files(
+    input_data_filepath: Union[str, Path],
+    output_data_filepath: Union[str, Path],
+    energy_filter: Callable[[float], bool],
+    mean_side_length_filter: Callable[[float], bool],
+) -> None:
+    side_length_groups, energies = load_fourbody_training_data(input_data_filepath)
 
-    sample_statistics = get_sample_statistics(energy_filepath, energy_predicate, distance_predicate)
-    print(sample_statistics)
+    allowed_sample_indices = np.array(
+        [
+            i
+            for (i, (e, s)) in enumerate(zip(energies, side_length_groups))
+            if energy_filter(e) and mean_side_length_filter(np.mean(s))
+        ]
+    )
+
+    side_length_groups = side_length_groups[allowed_sample_indices]
+    energies = energies[allowed_sample_indices]
+
+    save_fourbody_training_data(output_data_filepath, side_length_groups, energies)
+
+
+if __name__ == "__main__":
+    input_data_filepath = Path(".", "data", "all_energy_valid.dat")
+    output_data_filepath = Path(".", "data", "all_energy_valid_filtered.dat")
+    energy_filter = lambda e: abs(e) > 1.0e-3
+    mean_side_length_filter = lambda s: s <= 4.5
+
+    write_pruned_data_files(input_data_filepath, output_data_filepath, energy_filter, mean_side_length_filter)
+
+
+# - fix the rescaled energy cutoff training pipeline
+# - put the tensors on the GPU; maybe I've been missing out on performance?
+# - use this `energy_predicate` and `distance_predicate` stuff to find out how many small energy samples remain
+#   based on the mean distance cutoff
