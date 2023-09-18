@@ -1,4 +1,5 @@
 from nn_fourbody_potential.rescaling.forward_energy_rescaler import ForwardEnergyRescaler
+from nn_fourbody_potential.rescaling.rescaling_energy_model import RescalingEnergyModel
 from nn_fourbody_potential.rescaling.rescaling_limits import LinearMap
 from nn_fourbody_potential.rescaling.rescaling_limits import RescalingLimits
 from nn_fourbody_potential.rescaling.rescaling_limits import invert_rescaling_limits
