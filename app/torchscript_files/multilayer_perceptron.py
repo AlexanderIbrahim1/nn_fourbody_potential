@@ -34,8 +34,12 @@ class RegressionMultilayerPerceptron(torch.nn.Module):
 
 
 def export_torchscript_module(model_filepath: Path) -> None:
+    checkpoint_dict = torch.load(model_filepath)
     model = RegressionMultilayerPerceptron()
-    model.load_state_dict(torch.load(model_filepath))
+    model.load_state_dict(checkpoint_dict["model_state_dict"])
+
+    # model = RegressionMultilayerPerceptron()
+    # model.load_state_dict(torch.load(model_filepath))
 
     example = torch.Tensor([[2.3, 2.4, 2.5, 2.6, 2.7, 2.8]])
 
@@ -44,12 +48,15 @@ def export_torchscript_module(model_filepath: Path) -> None:
     torchscript_module.save(torchscript_module_filepath)
 
 
+
 if __name__ == "__main__":
-    coarse_energy_model_filepath = Path(".", "models", "coarse_energy_model.pth")
-    low_energy_model_filepath = Path(".", "models", "low_energy_model.pth")
-    mid_energy_model_filepath = Path(".", "models", "mid_energy_model.pth")
-    high_energy_model_filepath = Path(".", "models", "high_energy_model.pth")
+    rescaled_model_filepath = Path(".", "models", "rescaled_model_09999.pth")
+    export_torchscript_module(rescaled_model_filepath)
+    # coarse_energy_model_filepath = Path(".", "models", "coarse_energy_model.pth")
+    # low_energy_model_filepath = Path(".", "models", "low_energy_model.pth")
+    # mid_energy_model_filepath = Path(".", "models", "mid_energy_model.pth")
+    # high_energy_model_filepath = Path(".", "models", "high_energy_model.pth")
     # export_torchscript_module(coarse_energy_model_filepath)
-    export_torchscript_module(low_energy_model_filepath)
-    export_torchscript_module(mid_energy_model_filepath)
-    export_torchscript_module(high_energy_model_filepath)
+    # export_torchscript_module(low_energy_model_filepath)
+    # export_torchscript_module(mid_energy_model_filepath)
+    # export_torchscript_module(high_energy_model_filepath)
