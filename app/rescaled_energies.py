@@ -23,10 +23,23 @@ from nn_fourbody_potential.modelio.utils import get_model_filename
 from nn_fourbody_potential.models import TrainingParameters
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
+from nn_fourbody_potential.transformations import ReciprocalTransformer
+from nn_fourbody_potential.transformations import MinimumPermutationTransformer
+from nn_fourbody_potential.transformations import StandardizeTransformer
 from nn_fourbody_potential import rescaling
 
 import model_info
 import training
+
+
+def get_data_transforms_flattening() -> list[SixSideLengthsTransformer]:
+    min_sidelen = 2.2
+
+    return [
+        ReciprocalTransformer(),
+        StandardizeTransformer((0.0, 1.0 / min_sidelen), (0.0, 1.0)),
+        MinimumPermutationTransformer(),
+    ]
 
 
 def get_training_parameters(
@@ -36,12 +49,12 @@ def get_training_parameters(
 ) -> TrainingParameters:
     return TrainingParameters(
         seed=0,
-        layers=[64, 128, 256, 256, 128, 64],
+        layers=[64, 128, 128, 64],
         learning_rate=2.0e-4,
-        weight_decay=1.0e-4,
+        weight_decay=1.0e-5,
         training_size=model_info.number_of_lines(data_filepath),
         total_epochs=10000,
-        batch_size=4096,
+        batch_size=512,
         transformations=data_transforms,
         apply_batch_norm=False,
         other=other_info,
@@ -58,31 +71,15 @@ def get_toy_decay_potential() -> rescaling.RescalingPotential:
     return rescaling.RescalingPotential(coeff, expon, disp_coeff)
 
 
-class InverseEnergyRescaler:
-    def __init__(
-        self,
-        rescaling_potential: rescaling.RescalingPotential,
-        res_limits: rescaling.RescalingLimits,
-    ) -> None:
-        self._rescaling_potential = rescaling_potential
-        self._lin_map = rescaling.LinearMap(rescaling.invert_rescaling_limits(res_limits))
-
-    def __call__(self, rescaled_energy: float, *six_pair_distances: float) -> float:
-        rescale_value = self._rescaling_potential(*six_pair_distances)
-        unscaled_energy = self._lin_map(rescaled_energy) * rescale_value
-
-        return unscaled_energy
-
-
 def train_with_rescaling() -> None:
     training_data_filepath = Path("energy_separation", "data", "all_energy_train_filtered.dat")
     testing_data_filepath = Path("energy_separation", "data", "all_energy_test_filtered.dat")
     validation_data_filepath = Path("energy_separation", "data", "all_energy_valid_filtered.dat")
-    other_info = "_rescaled_model_all5"
+    other_info = "_rescaled_model_flatten_standard8"
 
     rescaling_potential = get_toy_decay_potential()
 
-    transforms = model_info.get_data_transforms()
+    transforms = get_data_transforms_flattening()
     params = get_training_parameters(training_data_filepath, transforms, other_info)
 
     side_length_groups_train, energies_train = training.load_fourbody_training_data(training_data_filepath)
@@ -132,7 +129,7 @@ def train_with_rescaling() -> None:
         model,
         modelpath,
         save_every=50,
-        # continue_training_from_epoch=999,
+        # continue_training_from_epoch=750,
     )
 
     last_model_filename = get_model_filename(saved_models_dirpath, params.total_epochs - 1)

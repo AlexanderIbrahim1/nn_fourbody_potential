@@ -126,6 +126,8 @@ def train_model(
     trainset = PotentialDataset(x_train, y_train)
     trainloader = DataLoader(trainset, batch_size=params.batch_size, num_workers=0, shuffle=True)
 
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=50, gamma=0.99)
+
     for i_epoch in range(epoch_start, params.total_epochs):
         for x_batch, y_batch in trainloader:
             y_batch_predicted = model(x_batch)
@@ -135,6 +137,9 @@ def train_model(
 
             optimizer.step()
             optimizer.zero_grad()
+
+        if i_epoch >= 100:
+            scheduler.step()
 
         epoch_training_loss = evaluate_model_loss(model, loss_calculator, x_train, y_train)
         training_error_writer.append(i_epoch, epoch_training_loss)

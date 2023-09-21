@@ -31,7 +31,7 @@ def get_ensemble_model_filepath(which: str) -> Path:
         "models",
         f"nnpes_{which}_energies2_layers64_128_128_64_lr_0.000100_datasize_{datasizes[which]}",
         "models",
-        "nnpes_09999.pth",
+        "nnpes_09950.pth",
     )
 
 
@@ -87,7 +87,7 @@ def get_reverse_rescaler() -> rescaling.ReverseEnergyRescaler:
 
 
 def get_rescaling_potential() -> ExtrapolatedPotential:
-    model_category = "nnpes_rescaled_model_all3_layers64_128_128_64_lr_0.000200_datasize_12633"
+    model_category = "nnpes_rescaled_model_flatten_standard8_layers64_128_128_64_lr_0.000200_datasize_12633"
     model_filepath = Path("models", model_category, "models", "nnpes_09999.pth")
     model = get_model(model_filepath, [64, 128, 128, 64])
 
@@ -95,7 +95,9 @@ def get_rescaling_potential() -> ExtrapolatedPotential:
 
     energy_model = rescaling.RescalingEnergyModel(model, rev_rescaler)
 
-    return ExtrapolatedPotential(energy_model, model_info.get_data_transforms(), pass_in_sidelengths_to_network=True)
+    return ExtrapolatedPotential(
+        energy_model, model_info.get_data_transforms_flattening(), pass_in_sidelengths_to_network=True
+    )
 
 
 def get_rms_error(x0_data: Sequence[float], x1_data: Sequence[float]) -> float:

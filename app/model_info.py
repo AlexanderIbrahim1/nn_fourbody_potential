@@ -71,6 +71,16 @@ def get_data_transforms() -> list[SixSideLengthsTransformer]:
     ]
 
 
+def get_data_transforms_flattening() -> list[SixSideLengthsTransformer]:
+    min_sidelen = 2.2
+
+    return [
+        ReciprocalTransformer(),
+        StandardizeTransformer((0.0, 1.0 / min_sidelen), (0.0, 1.0)),
+        MinimumPermutationTransformer(),
+    ]
+
+
 def get_training_parameters(
     training_data_filepath: Path, data_transforms: list[SixSideLengthsTransformer]
 ) -> TrainingParameters:
