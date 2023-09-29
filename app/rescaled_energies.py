@@ -51,9 +51,9 @@ def get_training_parameters(
         seed=0,
         layers=[64, 128, 128, 64],
         learning_rate=2.0e-4,
-        weight_decay=1.0e-5,
+        weight_decay=0.0,
         training_size=model_info.number_of_lines(data_filepath),
-        total_epochs=10000,
+        total_epochs=20000,
         batch_size=512,
         transformations=data_transforms,
         apply_batch_norm=False,
@@ -66,30 +66,39 @@ def get_toy_decay_potential() -> rescaling.RescalingPotential:
     # energies is the lowest possible
     coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0
     expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.02
-    disp_coeff = 1.0 * c12_parahydrogen_midzuno_kihara()
+    disp_coeff = 0.5 * c12_parahydrogen_midzuno_kihara()
 
     return rescaling.RescalingPotential(coeff, expon, disp_coeff)
 
 
 def train_with_rescaling() -> None:
     training_data_filepath = Path("energy_separation", "data", "all_energy_train_filtered.dat")
+    training_nohcp_data_filepath = Path("energy_separation", "data", "all_energy_train_filtered_no_hcp.dat")
     testing_data_filepath = Path("energy_separation", "data", "all_energy_test_filtered.dat")
     validation_data_filepath = Path("energy_separation", "data", "all_energy_valid_filtered.dat")
-    other_info = "_rescaled_model_flatten_standard8"
+    other_info = "_rescaling_model3"
 
     rescaling_potential = get_toy_decay_potential()
-
     transforms = get_data_transforms_flattening()
+
     params = get_training_parameters(training_data_filepath, transforms, other_info)
+    torch.manual_seed(params.seed)
+    np.random.seed(params.seed)
 
     side_length_groups_train, energies_train = training.load_fourbody_training_data(training_data_filepath)
+    side_length_groups_train_nohcp, energies_train_nohcp = training.load_fourbody_training_data(
+        training_nohcp_data_filepath
+    )
     side_length_groups_test, energies_test = training.load_fourbody_training_data(testing_data_filepath)
     side_length_groups_valid, energies_valid = training.load_fourbody_training_data(validation_data_filepath)
 
     x_train, y_train, res_limits = rescaling.prepare_rescaled_data(
         side_length_groups_train, energies_train, transforms, rescaling_potential
     )
-    print(res_limits)
+
+    x_train_nohcp, y_train_nohcp = rescaling.prepare_rescaled_data_with_rescaling_limits(
+        side_length_groups_train_nohcp, energies_train_nohcp, transforms, rescaling_potential, res_limits
+    )
 
     x_test, y_test = rescaling.prepare_rescaled_data_with_rescaling_limits(
         side_length_groups_test, energies_test, transforms, rescaling_potential, res_limits
@@ -105,6 +114,8 @@ def train_with_rescaling() -> None:
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     x_train = x_train.to(device)
     y_train = y_train.to(device)
+    x_train_nohcp = x_train_nohcp.to(device)
+    y_train_nohcp = y_train_nohcp.to(device)
     x_test = x_test.to(device)
     y_test = y_test.to(device)
     x_valid = x_valid.to(device)
@@ -123,13 +134,15 @@ def train_with_rescaling() -> None:
     training.train_model(
         x_train,
         y_train,
+        x_train_nohcp,
+        y_train_nohcp,
         x_valid,
         y_valid,
         params,
         model,
         modelpath,
         save_every=50,
-        # continue_training_from_epoch=750,
+        # continue_training_from_epoch=4500,
     )
 
     last_model_filename = get_model_filename(saved_models_dirpath, params.total_epochs - 1)
@@ -141,28 +154,33 @@ def train_with_rescaling() -> None:
 if __name__ == "__main__":
     train_with_rescaling()
 
-#     res_limits = rescaling.RescalingLimits(
-#         from_left=-3.2540090084075928, from_right=8.625899314880371, to_left=-1.0, to_right=1.0
-#     )
-#     rescaling_potential = get_toy_decay_potential()
-#     rev_rescaler = rescaling.ReverseEnergyRescaler(rescaling_potential, rescaling.invert_rescaling_limits(res_limits))
-#
-#     model_filename = Path(
-#         "/home/a68ibrah/research/four_body_interactions/nn_fourbody_potential/app/models/nnpes_rescaled_model_all3_layers64_128_128_64_lr_0.000200_datasize_12633/models/nnpes_09999.pth"
-#     )
-#     checkpoint = torch.load(model_filename)
-#     model = RegressionMultilayerPerceptron(training.N_FEATURES, training.N_OUTPUTS, [64, 128, 128, 64])
-#     model.load_state_dict(checkpoint["model_state_dict"])
-#
-#     energy_model = rescaling.RescalingEnergyModel(model, rev_rescaler)
-#
-#     transforms = model_info.get_data_transforms()
-#     extrapolated_potential = ExtrapolatedPotential(energy_model, transforms, pass_in_sidelengths_to_network=True)
-#
-#     sidelengths = np.linspace(1.9, 5.0, 256)
-#     sidelength_groups = np.array([(s, s, s, s, s, s) for s in sidelengths]).reshape(-1, 6).astype(np.float32)
-#     output_energies = extrapolated_potential.evaluate_batch(sidelength_groups)
-#
-#     _, ax = plt.subplots()
-#     ax.plot(sidelengths, output_energies)
-#     plt.show()
+    # OLD LIMITS
+    # res_limits = rescaling.RescalingLimits(
+    #     from_left=-3.2540090084075928, from_right=8.625899314880371, to_left=-1.0, to_right=1.0
+    # )
+    res_limits = rescaling.RescalingLimits(
+        from_left=-3.2619903087615967, from_right=8.64592170715332, to_left=-1.0, to_right=1.0
+    )
+
+    # rescaling_potential = get_toy_decay_potential()
+    # rev_rescaler = rescaling.ReverseEnergyRescaler(rescaling_potential, rescaling.invert_rescaling_limits(res_limits))
+
+    # model_filename = Path(
+    #     "/home/a68ibrah/research/four_body_interactions/nn_fourbody_potential/app/models/nnpes_rescaled_model_flatten_standard8_layers64_128_128_64_lr_0.000200_datasize_12633/models/nnpes_09999.pth"
+    # )
+    # checkpoint = torch.load(model_filename)
+    # model = RegressionMultilayerPerceptron(training.N_FEATURES, training.N_OUTPUTS, [64, 128, 128, 64])
+    # model.load_state_dict(checkpoint["model_state_dict"])
+
+    # energy_model = rescaling.RescalingEnergyModel(model, rev_rescaler)
+
+    # transforms = model_info.get_data_transforms_flattening()
+    # extrapolated_potential = ExtrapolatedPotential(energy_model, transforms, pass_in_sidelengths_to_network=True)
+
+    # sidelengths = np.linspace(1.9, 5.0, 256)
+    # sidelength_groups = np.array([(s, s, s, s, s, s) for s in sidelengths]).reshape(-1, 6).astype(np.float32)
+    # output_energies = extrapolated_potential.evaluate_batch(sidelength_groups)
+
+    # _, ax = plt.subplots()
+    # ax.plot(sidelengths, output_energies)
+    # plt.show()

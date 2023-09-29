@@ -86,6 +86,8 @@ def evaluate_model_loss(
 def train_model(
     x_train: torch.Tensor,
     y_train: torch.Tensor,
+    x_train_nohcp: torch.Tensor,
+    y_train_nohcp: torch.Tensor,
     x_valid: torch.Tensor,
     y_valid: torch.Tensor,
     params: TrainingParameters,
@@ -95,8 +97,6 @@ def train_model(
     save_every: int,
     continue_training_from_epoch: Optional[int] = None,
 ) -> None:
-    np.random.seed(params.seed)
-
     saved_models_dirpath = model_info.get_saved_models_dirpath(params)
     checkpoint_saver = CheckpointSaver(saved_models_dirpath)
 
@@ -121,6 +121,7 @@ def train_model(
         error_file_mode = "w"
 
     training_error_writer = ErrorWriter(modelpath, "training_error_vs_epoch.dat", mode=error_file_mode)
+    training_nohcp_error_writer = ErrorWriter(modelpath, "training_nohcp_error_vs_epoch.dat", mode=error_file_mode)
     validation_error_writer = ErrorWriter(modelpath, "validation_error_vs_epoch.dat", mode=error_file_mode)
 
     trainset = PotentialDataset(x_train, y_train)
@@ -144,11 +145,15 @@ def train_model(
         epoch_training_loss = evaluate_model_loss(model, loss_calculator, x_train, y_train)
         training_error_writer.append(i_epoch, epoch_training_loss)
 
+        epoch_training_nohcp_loss = evaluate_model_loss(model, loss_calculator, x_train_nohcp, y_train_nohcp)
+        training_nohcp_error_writer.append(i_epoch, epoch_training_nohcp_loss)
+
         epoch_validation_loss = evaluate_model_loss(model, loss_calculator, x_valid, y_valid)
         validation_error_writer.append(i_epoch, epoch_validation_loss)
 
-        print(f"(epoch, training_loss)   = ({i_epoch}, {epoch_training_loss:.8f})")
-        print(f"(epoch, validation_loss) = ({i_epoch}, {epoch_validation_loss:.8f})")
+        print(f"(epoch, training_loss)       = ({i_epoch}, {epoch_training_loss:.8f})")
+        print(f"(epoch, training_nohcp_loss) = ({i_epoch}, {epoch_training_nohcp_loss:.8f})")
+        print(f"(epoch, validation_loss)     = ({i_epoch}, {epoch_validation_loss:.8f})")
 
         if i_epoch % save_every == 0 and i_epoch != 0:
             checkpoint_saver.save_checkpoint(model=model, optimizer=optimizer, epoch=i_epoch)
