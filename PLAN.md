@@ -102,12 +102,20 @@ TODO:
 
 ## 2023-09-14
 
-- I want to train a neural network where the energies are rescaled by the toy exponential decay potential
-- this should bring all the energies to within a similar range of values
-- the training should be more effective than it is now
-- I might even be able to get rid of the ensemble potential
+[DONE]
+I want to train a neural network where the energies are rescaled by the toy exponential decay potential
+    - this should bring all the energies to within a similar range of values
+    - the training should be more effective than it is now
+    - I might even be able to get rid of the ensemble potential
 
-- One drawback of this rescaling is that we might not want the high and low energies on an equal footing
-  - we might end up in a situation where predictions for the low energy samples become more accurate at the expense
-    of the predictions of the high energy samples
-  - but we won't know this until we try it out
+[DONE]
+One drawback of this rescaling is that we might not want the high and low energies on an equal footing
+    - we might end up in a situation where predictions for the low energy samples become more accurate at the expense
+      of the predictions of the high energy samples
+    - but we won't know this until we try it out
+
+## 2023-10-02
+
+I want to make the pipeline that splits the data into training, testing, and validation sets more straightforward and reproducible
+    - set the seed that splits the data up-front
+    - create a separate directory where the split-up data is held
