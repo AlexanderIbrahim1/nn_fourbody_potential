@@ -48,9 +48,8 @@ def export_torchscript_module(model_filepath: Path) -> None:
     torchscript_module.save(torchscript_module_filepath)
 
 
-
 if __name__ == "__main__":
-    rescaled_model_filepath = Path(".", "models", "rescaled_model_09999.pth")
+    rescaled_model_filepath = Path(".", "models", "rescaling_model_19999.pth")
     export_torchscript_module(rescaled_model_filepath)
     # coarse_energy_model_filepath = Path(".", "models", "coarse_energy_model.pth")
     # low_energy_model_filepath = Path(".", "models", "low_energy_model.pth")
