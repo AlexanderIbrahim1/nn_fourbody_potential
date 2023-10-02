@@ -87,8 +87,8 @@ def get_reverse_rescaler() -> rescaling.ReverseEnergyRescaler:
 
 
 def get_rescaling_potential() -> ExtrapolatedPotential:
-    model_category = "nnpes_rescaled_model_flatten_standard8_layers64_128_128_64_lr_0.000200_datasize_12633"
-    model_filepath = Path("models", model_category, "models", "nnpes_09999.pth")
+    model_category = "nnpes_rescaling_model4_layers64_128_128_64_lr_0.000200_datasize_12621"
+    model_filepath = Path("models", model_category, "models", "nnpes_19999.pth")
     model = get_model(model_filepath, [64, 128, 128, 64])
 
     rev_rescaler = get_reverse_rescaler()
@@ -113,7 +113,10 @@ def main() -> None:
     ensemble_potential = get_energy_scale_ensemble_potential()
     rescaling_potential = get_rescaling_potential()
 
-    testing_data_filepath = Path("energy_separation", "data", "all_energy_test_filtered.dat")
+    # NOTE: this isn't a fair comparison, because I modified the splits, and so the ensemble model would have
+    # been trained on some of the testing data of the new model. But this is just an informal look at the
+    # two models, so I don't care too much.
+    testing_data_filepath = Path("energy_separation", "data_splitting", "split_data", "test.dat")
     side_length_groups_test, energies_test = training.load_fourbody_training_data(testing_data_filepath)
 
     output_energies_ensemble = ensemble_potential.evaluate_batch(side_length_groups_test)

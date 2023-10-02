@@ -49,9 +49,10 @@ def get_training_parameters(
 ) -> TrainingParameters:
     return TrainingParameters(
         seed=0,
-        layers=[64, 128, 128, 64],
+        # layers=[64, 128, 128, 64],
+        layers=[32, 64, 64, 32],
         learning_rate=2.0e-4,
-        weight_decay=1.0e-5,
+        weight_decay=0.0,
         training_size=model_info.number_of_lines(data_filepath),
         total_epochs=10000,
         batch_size=512,
@@ -76,7 +77,7 @@ def train_with_rescaling() -> None:
     training_nohcp_data_filepath = Path("energy_separation", "data_splitting", "split_data", "train_nohcp.dat")
     testing_data_filepath = Path("energy_separation", "data_splitting", "split_data", "test.dat")
     validation_data_filepath = Path("energy_separation", "data_splitting", "split_data", "valid.dat")
-    other_info = "_rescaling_model5"
+    other_info = "_rescaling_model6"
 
     # training_data_filepath = Path("energy_separation", "data", "all_energy_train_filtered.dat")
     # training_nohcp_data_filepath = Path("energy_separation", "data", "all_energy_train_filtered_no_hcp.dat")
@@ -159,35 +160,38 @@ def train_with_rescaling() -> None:
 
 
 if __name__ == "__main__":
-    # train_with_rescaling()
+    train_with_rescaling()
 
     # OLD LIMITS
     # res_limits = rescaling.RescalingLimits(
     #     from_left=-3.2540090084075928, from_right=8.625899314880371, to_left=-1.0, to_right=1.0
     # )
-    res_limits = rescaling.RescalingLimits(
-        from_left=-3.2619903087615967, from_right=8.64592170715332, to_left=-1.0, to_right=1.0
-    )
+    # res_limits = rescaling.RescalingLimits(
+    #     from_left=-3.2619903087615967, from_right=8.64592170715332, to_left=-1.0, to_right=1.0
+    # )
 
-    rescaling_potential = get_toy_decay_potential()
-    rev_rescaler = rescaling.ReverseEnergyRescaler(rescaling_potential, rescaling.invert_rescaling_limits(res_limits))
+    # rescaling_potential = get_toy_decay_potential()
+    # rev_rescaler = rescaling.ReverseEnergyRescaler(rescaling_potential, rescaling.invert_rescaling_limits(res_limits))
 
-    model_filename = Path(
-        "/home/a68ibrah/research/four_body_interactions/nn_fourbody_potential/app/models/nnpes_rescaling_model4_layers64_128_128_64_lr_0.000200_datasize_12621/models/nnpes_19999.pth"
-    )
-    checkpoint = torch.load(model_filename)
-    model = RegressionMultilayerPerceptron(training.N_FEATURES, training.N_OUTPUTS, [64, 128, 128, 64])
-    model.load_state_dict(checkpoint["model_state_dict"])
+    # model_filename = Path(
+    #     "/home/a68ibrah/research/four_body_interactions/nn_fourbody_potential/app/models/nnpes_rescaling_model4_layers64_128_128_64_lr_0.000200_datasize_12621/models/nnpes_19999.pth"
+    #     "/home/a68ibrah/research/four_body_interactions/nn_fourbody_potential/app/models/nnpes_rescaling_model6_layers32_64_64_32_lr_0.000200_datasize_12621/models/nnpes_19999.pth"
+    # )
+    # checkpoint = torch.load(model_filename)
+    # model = RegressionMultilayerPerceptron(
+    #     training.N_FEATURES, training.N_OUTPUTS, [32, 64, 64, 32]
+    # )  # [64, 128, 128, 64])
+    # model.load_state_dict(checkpoint["model_state_dict"])
 
-    energy_model = rescaling.RescalingEnergyModel(model, rev_rescaler)
+    # energy_model = rescaling.RescalingEnergyModel(model, rev_rescaler)
 
-    transforms = model_info.get_data_transforms_flattening()
-    extrapolated_potential = ExtrapolatedPotential(energy_model, transforms, pass_in_sidelengths_to_network=True)
+    # transforms = model_info.get_data_transforms_flattening()
+    # extrapolated_potential = ExtrapolatedPotential(energy_model, transforms, pass_in_sidelengths_to_network=True)
 
-    sidelengths = np.linspace(1.9, 5.0, 256)
-    sidelength_groups = np.array([(s, s, s, s, s, s) for s in sidelengths]).reshape(-1, 6).astype(np.float32)
-    output_energies = extrapolated_potential.evaluate_batch(sidelength_groups)
+    # sidelengths = np.linspace(1.9, 5.0, 256)
+    # sidelength_groups = np.array([(s, s, s, s, s, s) for s in sidelengths]).reshape(-1, 6).astype(np.float32)
+    # output_energies = extrapolated_potential.evaluate_batch(sidelength_groups)
 
-    _, ax = plt.subplots()
-    ax.plot(sidelengths, output_energies)
-    plt.show()
+    # _, ax = plt.subplots()
+    # ax.plot(sidelengths, output_energies)
+    # plt.show()
