@@ -28,6 +28,7 @@ from nn_fourbody_potential.rescaling.utils import _rescale_energies
 from sample_filter import SampleFilter
 from sample_filter import FullSampleFilter
 from sample_filter import MaxSideLengthSampleFilter
+from sample_filter import MaxEnergySampleFilter
 from sample_filter import apply_filter
 
 
@@ -36,8 +37,8 @@ class GeometricRescalingPotential:
     coeff: float
     expon: float
     disp_coeff: float
-    r_transition: float = 4.0
-    steepness: float = 2.0
+    r_transition: float = 3.8
+    steepness: float = 3.0
 
     def __post_init__(self) -> None:
         assert self.coeff > 0.0
@@ -50,12 +51,12 @@ class GeometricRescalingPotential:
         pairdist_product = functools.reduce(operator.mul, six_pair_distances, 1.0)
         geometric_average = pairdist_product ** (1.0 / 6.0)
 
-        # tanh_arg = self.steepness * (geometric_average - self.r_transition)
-        # frac_expon = 0.5 * (1.0 + math.tanh(tanh_arg))
-        # frac_disp = 1.0 - frac_expon
+        tanh_arg = self.steepness * (geometric_average - self.r_transition)
+        frac_expon = 0.5 * (1.0 + math.tanh(tanh_arg))
+        frac_disp = 1.0 - frac_expon
 
-        frac_expon = 1.0
-        frac_disp = 1.0
+        # frac_expon = 1.0
+        # frac_disp = 1.0
 
         expon_contribution = frac_expon * self.coeff * math.exp(-self.expon * geometric_average)
         disp_contribution = frac_disp * self.disp_coeff / (pairdist_product**2)
@@ -79,30 +80,56 @@ def main(rescaling_potential: GeometricRescalingPotential, filepaths: FilePaths,
     side_length_groups = filtered_data[:, :6]
     energies = filtered_data[:, 6]
 
-    y_train, res_limits = _rescale_energies(
-        side_length_groups, energies, rescaling_potential, omit_final_rescaling_step=True
-    )
+    for slg in side_length_groups:
+        print("SAMPLE")
+        print(slg.min().item())
+        print(slg.max().item())
+        print(slg.mean().item())
 
-    min_value = y_train.abs().min().item()
-    max_value = y_train.abs().max().item()
+    print(side_length_groups.shape)
+    print(energies.shape)
 
-    print(res_limits)
-    print(f"(min, max, ratio) = ({min_value: 0.8f}, {max_value: 0.8f}, {max_value / min_value: 0.4f})")
+    # y_train, res_limits = _rescale_energies(
+    #     side_length_groups, energies, rescaling_potential, omit_final_rescaling_step=True
+    # )
+
+    # min_value = y_train.abs().min().item()
+    # max_value = y_train.abs().max().item()
+
+    # # print(res_limits)
+    # print(f"(min, max, ratio) = ({min_value: 0.8f}, {max_value: 0.8f}, {max_value / min_value: 0.4f})")
 
 
 if __name__ == "__main__":
     rescaling_potential = GeometricRescalingPotential(
-        coeff=ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0,
-        expon=ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.0,
-        disp_coeff=0.5 * c12_parahydrogen_midzuno_kihara(),
+        coeff=ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 24.0,
+        expon=ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 6.0,
+        disp_coeff=1.0 * c12_parahydrogen_midzuno_kihara(),
     )
     filepaths = FilePaths(
         hcp_filepath=Path("..", "data", "abinitio_hcp_data_3901.dat"),
         sampled_filepath=Path("..", "data", "abinitio_sampled_data_16000.dat"),
     )
-    data_filter = MaxSideLengthSampleFilter(4.4)
+
+    # data_filter = FullSampleFilter(1.0e-3, 4.5)
+    data_filter = MaxEnergySampleFilter(1.0e-3)
+    # data_filter = MaxSideLengthSampleFilter(4.5)
 
     main(rescaling_potential, filepaths, data_filter)
+
+
+# FILTERING RESULTS
+# HCP DATA
+# apply side length filter (4.5) : 3901 samples -> 1610 samples (remove 2291)
+# apply energy filter (1.0e-3)   : 1610 samples -> 1512 samples (remove 98)
+# SAMPLED DATA
+# apply side length filter (4.5) : 16000 samples -> 16000 samples (remove 0) (obvious; no sample has side length that great)
+# apply energy filter (1.0e-3)   : 16000 samples -> 15870 samples (remove 130)
+#
+# so the energy filter removes about 1.15 % of the data
+# - essentially all of them are long-range anyways
+# - worth removing a small amount of data from training, to improve the stability
+#   - even if their prediction worsens
 
 # PLAN
 # load the unfiltered hcp and sampled data

@@ -61,6 +61,21 @@ class MinEnergySampleFilter(SampleFilter):
         return abs_energy >= self.min_abs_energy
 
 
+@dataclasses.dataclass
+class MaxEnergySampleFilter(SampleFilter):
+    max_abs_energy: float
+
+    def __call__(self, sample_: torch.Tensor) -> bool:
+        if sample_.shape not in [torch.Size([7]), torch.Size([1, 7])]:
+            raise ValueError("Invalid sample passed into the SampleFilter.")
+
+        sample = sample_.view(7)
+        energy = sample[6]
+        abs_energy = energy.abs().item()
+
+        return abs_energy < self.max_abs_energy
+
+
 def apply_filter(samples: torch.Tensor, sample_filter: SampleFilter) -> torch.Tensor:
     if len(samples.shape) != 2 and samples.shape[-1] != 7:
         raise ValueError("Samples of invalid size passed to filter.")
