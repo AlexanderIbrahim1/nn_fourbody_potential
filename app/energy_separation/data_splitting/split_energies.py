@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from torch.utils.data import random_split
 
-from sample_filter import SampleFilter
+from sample_filter import FullSampleFilter
 from sample_filter import apply_filter
 from sample_splitter import DataSplitFractions
 from sample_splitter import DataSplitSizes
@@ -68,7 +68,7 @@ def main(
 if __name__ == "__main__":
     seed = 42
     fractions = DataSplitFractions(0.7, 0.15, 0.15)
-    data_filter = SampleFilter(1.0e-3, 4.5)
+    data_filter = FullSampleFilter(1.0e-3, 4.5)
     filepaths = FilePaths(
         hcp_filepath=Path("..", "data", "abinitio_hcp_data_3901.dat"),
         sampled_filepath=Path("..", "data", "abinitio_sampled_data_16000.dat"),
