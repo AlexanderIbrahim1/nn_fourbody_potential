@@ -39,7 +39,7 @@ class RescalingPotential:
         object.__setattr__(self, "potential", potential)
 
     def __call__(self, *six_pair_distances: float) -> float:
-        return self.potential(six_pair_distances)
+        return self.potential(*six_pair_distances)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -58,8 +58,15 @@ class ArithmeticRescalingPotential:
 
         average_pairdist = statistics.fmean(six_pair_distances)
 
-        expon_contribution = self.coeff * math.exp(-self.expon * average_pairdist)
-        disp_contribution = self.disp_coeff / (average_pairdist**12)
+        # tanh_arg = 0.1 * (average_pairdist - 3.0)
+        # frac_disp = 0.5 * (1.0 + math.tanh(tanh_arg))
+        # frac_expon = 1.0 - frac_disp
+
+        frac_disp = 1.0
+        frac_expon = 1.0
+
+        expon_contribution = frac_expon * self.coeff * math.exp(-self.expon * average_pairdist)
+        disp_contribution = frac_disp * self.disp_coeff / (average_pairdist**12)
 
         return expon_contribution + disp_contribution
 

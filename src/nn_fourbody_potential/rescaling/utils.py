@@ -51,6 +51,8 @@ def prepare_rescaled_data(
     _energies: NDArray,
     transformers: Sequence[SixSideLengthsTransformer],
     res_potential: RescalingPotential,
+    *,
+    omit_final_rescaling_step: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor, RescalingLimits]:
     """
     _side_length_groups:
@@ -72,14 +74,17 @@ def prepare_rescaled_data(
     dummy_fwd_rescaler = ForwardEnergyRescaler(res_potential, identity_res_limits)
     forward_rescale_energies_(dummy_fwd_rescaler, side_length_groups, energies)  # modifies `energies`
 
-    # use these reduced energies to get the proper rescaling limits
-    fwd_rescaling_limits = _forward_rescaling_limits(energies)
+    if omit_final_rescaling_step:
+        return (trans_side_length_groups, energies, dummy_fwd_rescaler)
+    else:
+        # use these reduced energies to get the proper rescaling limits
+        fwd_rescaling_limits = _forward_rescaling_limits(energies)
 
-    # apply the proper rescaling to turn the reduced energies to the fully rescaled energies
-    fwd_linear_map = LinearMap(fwd_rescaling_limits)
-    energies.apply_(fwd_linear_map)
+        # apply the proper rescaling to turn the reduced energies to the fully rescaled energies
+        fwd_linear_map = LinearMap(fwd_rescaling_limits)
+        energies.apply_(fwd_linear_map)
 
-    return (trans_side_length_groups, energies, fwd_rescaling_limits)
+        return (trans_side_length_groups, energies, fwd_rescaling_limits)
 
 
 def prepare_rescaled_data_with_rescaling_limits(
@@ -112,3 +117,36 @@ def _forward_rescaling_limits(reduced_energies: torch.Tensor) -> RescalingLimits
     min_target = -1.0
     max_target = 1.0
     return RescalingLimits(min_red_energy, max_red_energy, min_target, max_target)
+
+
+def _rescale_energies(
+    side_length_groups: torch.Tensor,
+    energies: torch.Tensor,
+    res_potential: RescalingPotential,
+    *,
+    omit_final_rescaling_step: bool = False,
+) -> tuple[torch.Tensor, RescalingLimits]:
+    """
+    _side_length_groups:
+        a numpy array of shape (N, 6) representing the 6-tuples of relative pair distances between
+        the four points
+    _energies:
+        a numpy array of shape (N,) or (N, 1) representing the interaction potential energy of the
+        four points
+    """
+    # use the RescalingPotential to modify the energies, without linearly mapping the outputs
+    identity_res_limits = RescalingLimits(0.0, 1.0, 0.0, 1.0)
+    dummy_fwd_rescaler = ForwardEnergyRescaler(res_potential, identity_res_limits)
+    forward_rescale_energies_(dummy_fwd_rescaler, side_length_groups, energies)  # modifies `energies`
+
+    if omit_final_rescaling_step:
+        return (energies, dummy_fwd_rescaler)
+    else:
+        # use these reduced energies to get the proper rescaling limits
+        fwd_rescaling_limits = _forward_rescaling_limits(energies)
+
+        # apply the proper rescaling to turn the reduced energies to the fully rescaled energies
+        fwd_linear_map = LinearMap(fwd_rescaling_limits)
+        energies.apply_(fwd_linear_map)
+
+        return (energies, fwd_rescaling_limits)
