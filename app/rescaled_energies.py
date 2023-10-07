@@ -48,13 +48,12 @@ def get_training_parameters(
     other_info: str,
 ) -> TrainingParameters:
     return TrainingParameters(
-        seed=0,
-        # layers=[64, 128, 128, 64],
-        layers=[32, 64, 64, 32],
+        seed=42,
+        layers=[64, 128, 128, 64],
         learning_rate=2.0e-4,
         weight_decay=0.0,
         training_size=model_info.number_of_lines(data_filepath),
-        total_epochs=10000,
+        total_epochs=20000,
         batch_size=512,
         transformations=data_transforms,
         apply_batch_norm=False,
@@ -73,11 +72,11 @@ def get_toy_decay_potential() -> rescaling.RescalingPotential:
 
 
 def train_with_rescaling() -> None:
-    training_data_filepath = Path("energy_separation", "data_splitting", "split_data", "train.dat")
-    training_nohcp_data_filepath = Path("energy_separation", "data_splitting", "split_data", "train_nohcp.dat")
-    testing_data_filepath = Path("energy_separation", "data_splitting", "split_data", "test.dat")
-    validation_data_filepath = Path("energy_separation", "data_splitting", "split_data", "valid.dat")
-    other_info = "_rescaling_model6"
+    training_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "train.dat")
+    training_nohcp_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "train_nohcp.dat")
+    testing_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "test.dat")
+    validation_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "valid.dat")
+    other_info = "_rescaling_model_filtered"
 
     # training_data_filepath = Path("energy_separation", "data", "all_energy_train_filtered.dat")
     # training_nohcp_data_filepath = Path("energy_separation", "data", "all_energy_train_filtered_no_hcp.dat")

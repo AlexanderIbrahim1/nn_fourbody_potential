@@ -12,6 +12,7 @@ import torch
 from torch.utils.data import random_split
 
 from sample_filter import FullSampleFilter
+from sample_filter import MaxSideLengthSampleFilter
 from sample_filter import apply_filter
 from sample_splitter import DataSplitFractions
 from sample_splitter import DataSplitSizes
@@ -67,15 +68,15 @@ def main(
 
 if __name__ == "__main__":
     seed = 42
-    fractions = DataSplitFractions(0.7, 0.15, 0.15)
-    data_filter = FullSampleFilter(1.0e-3, 4.5)
+    fractions = DataSplitFractions(0.75, 0.125, 0.125)
+    data_filter = MaxSideLengthSampleFilter(4.5)
     filepaths = FilePaths(
         hcp_filepath=Path("..", "data", "abinitio_hcp_data_3901.dat"),
         sampled_filepath=Path("..", "data", "abinitio_sampled_data_16000.dat"),
-        train_save_filepath=Path(".", "split_data", "train2.dat"),
-        train_nohcp_save_filepath=Path(".", "split_data", "train_nohcp2.dat"),
-        test_save_filepath=Path(".", "split_data", "test2.dat"),
-        valid_save_filepath=Path(".", "split_data", "valid2.dat"),
+        train_save_filepath=Path(".", "filtered_split_data", "train.dat"),
+        train_nohcp_save_filepath=Path(".", "filtered_split_data", "train_nohcp.dat"),
+        test_save_filepath=Path(".", "filtered_split_data", "test.dat"),
+        valid_save_filepath=Path(".", "filtered_split_data", "valid.dat"),
     )
 
     main(seed, fractions, data_filter, filepaths)
