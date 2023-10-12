@@ -53,8 +53,8 @@ def get_training_parameters(
         learning_rate=2.0e-4,
         weight_decay=0.0,
         training_size=model_info.number_of_lines(data_filepath),
-        total_epochs=20000,
-        batch_size=512,
+        total_epochs=10000,
+        batch_size=128,
         transformations=data_transforms,
         apply_batch_norm=False,
         other=other_info,
@@ -76,7 +76,7 @@ def train_with_rescaling() -> None:
     training_nohcp_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "train_nohcp.dat")
     testing_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "test.dat")
     validation_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "valid.dat")
-    other_info = "_rescaling_model_filtered"
+    other_info = "_rescaling_model_filtered8"
 
     # training_data_filepath = Path("energy_separation", "data", "all_energy_train_filtered.dat")
     # training_nohcp_data_filepath = Path("energy_separation", "data", "all_energy_train_filtered_no_hcp.dat")
@@ -159,7 +159,9 @@ def train_with_rescaling() -> None:
 
 
 if __name__ == "__main__":
-    train_with_rescaling()
+    pot = get_toy_decay_potential()
+    print(pot)
+    # train_with_rescaling()
 
     # OLD LIMITS
     # res_limits = rescaling.RescalingLimits(
