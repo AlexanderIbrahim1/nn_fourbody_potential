@@ -9,7 +9,7 @@ from typing import Optional
 
 from cartesian.measure import distance
 
-from dispersion4b.coefficients import c12_parahydrogen_midzuno_kihara
+from dispersion4b.coefficients import b12_parahydrogen_avtz_approx
 from dispersion4b.potential import FourBodyDispersionPotential
 
 from hydro4b_coords.generate.generate import six_side_lengths_to_cartesian
@@ -95,5 +95,5 @@ class LongRangeEnergyCorrector:
 
 
 def _get_dispersion_potential() -> FourBodyDispersionPotential:
-    c12 = c12_parahydrogen_midzuno_kihara()
-    return FourBodyDispersionPotential(c12)
+    b12 = b12_parahydrogen_avtz_approx()
+    return FourBodyDispersionPotential(b12)
