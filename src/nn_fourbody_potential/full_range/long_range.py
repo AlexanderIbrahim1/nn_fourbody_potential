@@ -10,7 +10,7 @@ from typing import Optional
 from cartesian.measure import distance
 
 from dispersion4b.coefficients import b12_parahydrogen_avtz_approx
-from dispersion4b.potential import FourBodyDispersionPotential
+from dispersion4b.quadruplet_potential import QuadrupletDispersionPotential
 
 from hydro4b_coords.generate.generate import six_side_lengths_to_cartesian
 
@@ -30,7 +30,7 @@ class LongRangeEnergyCorrector:
     def __init__(
         self,
         *,
-        dispersion_potential: Optional[FourBodyDispersionPotential] = None,
+        dispersion_potential: Optional[QuadrupletDispersionPotential] = None,
     ) -> None:
         if dispersion_potential is not None:
             self._dispersion_potential = dispersion_potential
@@ -94,6 +94,6 @@ class LongRangeEnergyCorrector:
         return (dispersion_energy * frac_dispersion) + (abinitio_energy * frac_abinitio)
 
 
-def _get_dispersion_potential() -> FourBodyDispersionPotential:
+def _get_dispersion_potential() -> QuadrupletDispersionPotential:
     b12 = b12_parahydrogen_avtz_approx()
-    return FourBodyDispersionPotential(b12)
+    return QuadrupletDispersionPotential(b12)
