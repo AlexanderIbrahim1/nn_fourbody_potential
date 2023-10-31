@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Sequence
 
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 
 from nn_fourbody_potential import rescaling
@@ -91,9 +92,10 @@ def get_rescaling_potential() -> ExtrapolatedPotential:
     # model_filepath = Path("models", model_category, "models", "nnpes_19999.pth")
     # model = get_model(model_filepath, [64, 128, 128, 64])
 
-    model_category = "nnpes_rescaling_model_filtered10_layers64_128_128_64_lr_0.000200_datasize_13610"
+    # model_category = "nnpes_rescaling_model_filtered10_layers64_128_128_64_lr_0.000200_datasize_13610"
+    model_category = "nnpes_rescaling_model_filtered11_layers32_64_64_32_lr_0.000200_datasize_13610"
     model_filepath = Path("models", model_category, "models", "nnpes_09999.pth")
-    model = get_model(model_filepath, [64, 128, 128, 64])
+    model = get_model(model_filepath, [32, 64, 64, 32])
 
     rev_rescaler = get_reverse_rescaler()
 
@@ -125,6 +127,11 @@ def main() -> None:
 
     output_energies_ensemble = ensemble_potential.evaluate_batch(side_length_groups_test)
     output_energies_rescaling = rescaling_potential.evaluate_batch(side_length_groups_test)
+
+    # savedata = np.vstack((energies_test, output_energies_rescaling)).T
+    # save_filepath = Path(".", "test_and_rescaling_energies.dat")
+    # np.savetxt(save_filepath, savedata)
+    # exit()
 
     print(get_rms_error(output_energies_ensemble, energies_test))
     print(get_rms_error(output_energies_rescaling, energies_test))
