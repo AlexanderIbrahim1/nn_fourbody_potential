@@ -94,12 +94,14 @@ def get_rescaling_potential() -> ExtrapolatedPotential:
 
     # model_category = "nnpes_rescaling_model_filtered10_layers64_128_128_64_lr_0.000200_datasize_13610"
     # model_category = "nnpes_rescaling_model_filtered11_layers32_64_64_32_lr_0.000200_datasize_13610"
-    model_category = "nnpes_rescaling_model_filtered12_layers16_32_32_16_lr_0.000200_datasize_13610"
+    # model_category = "nnpes_rescaling_model_filtered12_layers16_32_32_16_lr_0.000200_datasize_13610"
+    model_category = "nnpes_rescaling_model_filtered13_layers8_16_16_8_lr_0.000200_datasize_13610"
 
     model_filepath = Path("models", model_category, "models", "nnpes_09999.pth")
     # model = get_model(model_filepath, [64, 128, 128, 64])
     # model = get_model(model_filepath, [32, 64, 64, 32])
-    model = get_model(model_filepath, [16, 32, 32, 16])
+    # model = get_model(model_filepath, [16, 32, 32, 16])
+    model = get_model(model_filepath, [8, 16, 16, 8])
 
     rev_rescaler = get_reverse_rescaler()
 
