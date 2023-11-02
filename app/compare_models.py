@@ -93,8 +93,12 @@ def get_rescaling_potential() -> ExtrapolatedPotential:
     # model = get_model(model_filepath, [64, 128, 128, 64])
 
     # model_category = "nnpes_rescaling_model_filtered10_layers64_128_128_64_lr_0.000200_datasize_13610"
+    # model_category = "nnpes_rescaling_model_filtered11_layers32_64_64_32_lr_0.000200_datasize_13610"
     model_category = "nnpes_rescaling_model_filtered12_layers16_32_32_16_lr_0.000200_datasize_13610"
+
     model_filepath = Path("models", model_category, "models", "nnpes_09999.pth")
+    # model = get_model(model_filepath, [64, 128, 128, 64])
+    # model = get_model(model_filepath, [32, 64, 64, 32])
     model = get_model(model_filepath, [16, 32, 32, 16])
 
     rev_rescaler = get_reverse_rescaler()
@@ -129,7 +133,7 @@ def main() -> None:
     output_energies_rescaling = rescaling_potential.evaluate_batch(side_length_groups_test)
 
     # savedata = np.vstack((energies_test, output_energies_rescaling)).T
-    # save_filepath = Path(".", "test_and_rescaling_energies.dat")
+    # save_filepath = Path("test_vs_model_energies", "test_and_rescaling_energies_16_32_32_16.dat")
     # np.savetxt(save_filepath, savedata)
     # exit()
 
