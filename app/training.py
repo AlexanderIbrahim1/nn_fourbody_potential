@@ -91,9 +91,9 @@ class TrainingLossAccumulator:
         self._total_accumulated_samples = 0
         self._total_accumulated_loss = 0.0
 
-    def accumulate(self, minibatch_size: int, mse_loss: torch.Tensor) -> None:
+    def accumulate(self, minibatch_size: int, loss_value: torch.Tensor) -> None:
         self._total_accumulated_samples += minibatch_size
-        total_batch_loss = minibatch_size * mse_loss.item()
+        total_batch_loss = minibatch_size * loss_value.item()
         self._total_accumulated_loss += total_batch_loss
 
     def get_and_reset_total_loss(self) -> float:
@@ -119,6 +119,15 @@ class DataLoaderMaker:
         return DataLoader(self._trainset, batch_size=new_batch_size, num_workers=0, shuffle=True)
 
 
+class RMSLELoss(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = torch.nn.MSELoss()
+
+    def forward(self, pred, actual):
+        return torch.sqrt(self.mse(torch.log(pred + 1.0), torch.log(actual + 1.0)))
+
+
 def train_model(
     x_train: torch.Tensor,
     y_train: torch.Tensor,
@@ -136,7 +145,8 @@ def train_model(
     saved_models_dirpath = model_info.get_saved_models_dirpath(params)
     checkpoint_saver = CheckpointSaver(saved_models_dirpath)
 
-    loss_calculator = torch.nn.MSELoss()
+    # TODO: maybe change back?
+    loss_calculator = RMSLELoss()
 
     # if continue_training_from_epoch is not None:
     #     checkpoint_loader = CheckpointLoader(saved_models_dirpath)

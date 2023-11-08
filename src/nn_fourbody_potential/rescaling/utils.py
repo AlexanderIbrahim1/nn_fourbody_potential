@@ -51,6 +51,7 @@ def prepare_rescaled_data(
     _energies: NDArray,
     transformers: Sequence[SixSideLengthsTransformer],
     res_potential: RescalingPotential,
+    target_rescaling_limits: tuple[float, float] = (-1.0, 1.0),
     *,
     omit_final_rescaling_step: bool = False,
 ) -> tuple[torch.Tensor, torch.Tensor, RescalingLimits]:
@@ -78,7 +79,7 @@ def prepare_rescaled_data(
         return (trans_side_length_groups, energies, dummy_fwd_rescaler)
     else:
         # use these reduced energies to get the proper rescaling limits
-        fwd_rescaling_limits = _forward_rescaling_limits(energies)
+        fwd_rescaling_limits = _forward_rescaling_limits(energies, target_rescaling_limits)
 
         # apply the proper rescaling to turn the reduced energies to the fully rescaled energies
         fwd_linear_map = LinearMap(fwd_rescaling_limits)
@@ -111,11 +112,13 @@ def prepare_rescaled_data_with_rescaling_limits(
     return (trans_side_length_groups, energies)
 
 
-def _forward_rescaling_limits(reduced_energies: torch.Tensor) -> RescalingLimits:
+def _forward_rescaling_limits(
+    reduced_energies: torch.Tensor, target_rescaling_limits: tuple[float, float]
+) -> RescalingLimits:
     min_red_energy = reduced_energies.min().item()
     max_red_energy = reduced_energies.max().item()
-    min_target = -1.0
-    max_target = 1.0
+    min_target = target_rescaling_limits[0]
+    max_target = target_rescaling_limits[1]
     return RescalingLimits(min_red_energy, max_red_energy, min_target, max_target)
 
 

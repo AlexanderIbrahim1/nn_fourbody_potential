@@ -49,7 +49,7 @@ def get_training_parameters(
 ) -> TrainingParameters:
     return TrainingParameters(
         seed=42,
-        layers=[8, 16, 16, 8],
+        layers=[64, 128, 128, 64],
         learning_rate=2.0e-4,
         weight_decay=0.0,
         training_size=model_info.number_of_lines(data_filepath),
@@ -76,7 +76,7 @@ def train_with_rescaling() -> None:
     training_nohcp_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "train_nohcp.dat")
     testing_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "test.dat")
     validation_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "valid.dat")
-    other_info = "_rescaling_model_filtered13"
+    other_info = "_rescaling_model_filtered14"
 
     rescaling_potential = get_toy_decay_potential()
     transforms = get_data_transforms_flattening()
@@ -93,7 +93,7 @@ def train_with_rescaling() -> None:
     # fmt: on
 
     x_train, y_train, res_limits = rescaling.prepare_rescaled_data(
-        side_length_groups_train, energies_train, transforms, rescaling_potential
+        side_length_groups_train, energies_train, transforms, rescaling_potential, (0.0, 1.0)
     )
     print(res_limits)
 
