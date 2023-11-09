@@ -119,13 +119,13 @@ class DataLoaderMaker:
         return DataLoader(self._trainset, batch_size=new_batch_size, num_workers=0, shuffle=True)
 
 
-class RMSLELoss(torch.nn.Module):
+class MSLELoss(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.mse = torch.nn.MSELoss()
 
     def forward(self, pred, actual):
-        return torch.sqrt(self.mse(torch.log(pred + 1.0), torch.log(actual + 1.0)))
+        return self.mse(torch.log(pred + 1.0), torch.log(actual + 1.0))
 
 
 def train_model(
@@ -146,7 +146,7 @@ def train_model(
     checkpoint_saver = CheckpointSaver(saved_models_dirpath)
 
     # TODO: maybe change back?
-    loss_calculator = RMSLELoss()
+    loss_calculator = MSLELoss()
 
     # if continue_training_from_epoch is not None:
     #     checkpoint_loader = CheckpointLoader(saved_models_dirpath)

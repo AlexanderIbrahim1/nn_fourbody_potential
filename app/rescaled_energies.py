@@ -76,7 +76,7 @@ def train_with_rescaling() -> None:
     training_nohcp_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "train_nohcp.dat")
     testing_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "test.dat")
     validation_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "valid.dat")
-    other_info = "_rescaling_model_filtered14"
+    other_info = "_rescaling_model_filtered15"
 
     rescaling_potential = get_toy_decay_potential()
     transforms = get_data_transforms_flattening()
