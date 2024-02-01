@@ -30,11 +30,9 @@ from nn_fourbody_potential.transformations import StandardizeTransformer
 from nn_fourbody_potential import rescaling
 
 import model_info
-import training
-
-import reproducible_training.training as rep_training
-from reproducible_training.training_utils import N_FEATURES
-from reproducible_training.training_utils import N_OUTPUTS
+import training as rep_training
+from training_utils import N_FEATURES
+from training_utils import N_OUTPUTS
 
 
 def get_data_transforms_flattening() -> list[SixSideLengthsTransformer]:
@@ -161,10 +159,12 @@ def get_toy_decay_potential() -> rescaling.RescalingPotential:
 
 
 def rep_train_with_rescaling() -> None:
-    training_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "train.dat")
-    training_nohcp_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "train_nohcp.dat")
-    testing_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "test.dat")
-    validation_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "valid.dat")
+    training_data_filepath = Path("..", "energy_separation", "data_splitting", "filtered_split_data", "train.dat")
+    training_nohcp_data_filepath = Path(
+        "..", "energy_separation", "data_splitting", "filtered_split_data", "train_nohcp.dat"
+    )
+    testing_data_filepath = Path("..", "energy_separation", "data_splitting", "filtered_split_data", "test.dat")
+    validation_data_filepath = Path("..", "energy_separation", "data_splitting", "filtered_split_data", "valid.dat")
     other_info = "_rescaling_model_filtered_reptraining0"
 
     rescaling_potential = get_toy_decay_potential()
@@ -175,14 +175,14 @@ def rep_train_with_rescaling() -> None:
     np.random.seed(params.seed)
 
     # fmt: off
-    side_length_groups_train, energies_train = training.load_fourbody_training_data(training_data_filepath)
-    side_length_groups_train_nohcp, energies_train_nohcp = training.load_fourbody_training_data(training_nohcp_data_filepath)
-    side_length_groups_test, energies_test = training.load_fourbody_training_data(testing_data_filepath)
-    side_length_groups_valid, energies_valid = training.load_fourbody_training_data(validation_data_filepath)
+    side_length_groups_train, energies_train = load_fourbody_training_data(training_data_filepath)
+    side_length_groups_train_nohcp, energies_train_nohcp = load_fourbody_training_data(training_nohcp_data_filepath)
+    side_length_groups_test, energies_test = load_fourbody_training_data(testing_data_filepath)
+    side_length_groups_valid, energies_valid = load_fourbody_training_data(validation_data_filepath)
     # fmt: on
 
     x_train, y_train, res_limits = rescaling.prepare_rescaled_data(
-        side_length_groups_train, energies_train, transforms, rescaling_potential, (0.0, 1.0)
+        side_length_groups_train, energies_train, transforms, rescaling_potential
     )
     print(res_limits)
 
@@ -222,7 +222,7 @@ def rep_train_with_rescaling() -> None:
     saved_models_dirpath = model_info.get_saved_models_dirpath(params)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.99)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.99)
 
     rep_training.train_model(
         x_train,
@@ -237,7 +237,7 @@ def rep_train_with_rescaling() -> None:
         scheduler,
         modelpath,
         save_every=10,
-        # continue_training_from_epoch=4500,
+        continue_training_from_epoch=30,
     )
 
     last_model_filename = get_model_filename(saved_models_dirpath, params.total_epochs - 1)

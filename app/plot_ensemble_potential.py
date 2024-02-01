@@ -8,6 +8,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.typing import NDArray
 import torch
 
 from cartesian import Cartesian3D
@@ -37,8 +38,9 @@ def create_energy_scale_assigner() -> EnergyScaleAssigner:
 def get_model(model_filepath: Path, layer_sizes: list[int]) -> RegressionMultilayerPerceptron:
     n_features = 6
     n_outputs = 1
+    checkpoint_dict = torch.load(model_filepath)
     model = RegressionMultilayerPerceptron(n_features, n_outputs, layer_sizes)
-    model.load_state_dict(torch.load(model_filepath))
+    model.load_state_dict(checkpoint_dict["model_state_dict"])
 
     return model
 
@@ -62,38 +64,36 @@ def get_energy_scale_ensemble_model() -> EnergyScaleEnsembleModel:
     all_energy_model_filepath = Path(
         "energy_separation",
         "models",
-        "nnpes_all_energies_layers64_128_128_64_lr_0.000200_datasize_15101",
+        "nnpes_all_energies2_layers64_128_128_64_lr_0.000100_datasize_15101",
         "models",
-        "nnpes_02999.pth",
+        "nnpes_09950.pth",
     )
     low_energy_model_filepath = Path(
         "energy_separation",
         "models",
-        "nnpes_low_energies_layers64_128_128_64_lr_0.000200_datasize_7941",
+        "nnpes_low_energies2_layers64_128_128_64_lr_0.000100_datasize_7941",
         "models",
-        "nnpes_02999.pth",
+        "nnpes_09950.pth",
     )
     mid_energy_model_filepath = Path(
         "energy_separation",
         "models",
-        "nnpes_mid_energies_layers64_128_128_64_lr_0.000200_datasize_3879",
+        "nnpes_mid_energies2_layers64_128_128_64_lr_0.000100_datasize_3879",
         "models",
-        "nnpes_02999.pth",
+        "nnpes_09950.pth",
     )
     high_energy_model_filepath = Path(
         "energy_separation",
         "models",
-        "nnpes_high_energies_layers64_128_128_64_lr_0.000200_datasize_4393",
+        "nnpes_high_energies2_layers64_128_128_64_lr_0.000100_datasize_4393",
         "models",
-        "nnpes_02999.pth",
+        "nnpes_09950.pth",
     )
 
     all_energy_model = get_model(all_energy_model_filepath, layer_sizes)
     low_energy_model = get_model(low_energy_model_filepath, layer_sizes)
     mid_energy_model = get_model(mid_energy_model_filepath, layer_sizes)
     high_energy_model = get_model(high_energy_model_filepath, layer_sizes)
-
-    transformers = feature_transformers()
 
     return EnergyScaleEnsembleModel(
         max_n_samples,
@@ -102,7 +102,6 @@ def get_energy_scale_ensemble_model() -> EnergyScaleEnsembleModel:
         mid_energy_model,
         high_energy_model,
         energy_scale_assigner,
-        transformers,
     )
 
 
@@ -124,9 +123,22 @@ def get_sample(lattice_constant: float) -> SixSideLengths:
     return tuple(pair_distances)
 
 
-def main() -> None:
+def read_samples(samples_filepath: Path) -> NDArray:
+    samples = np.loadtxt(samples_filepath, unpack=False, dtype=np.float32)
+    samples = samples.reshape(-1, 6)
+
+    return samples
+
+
+def main(samples_filepath: Path) -> None:
     ensemble_model = get_energy_scale_ensemble_model()
     extrapolated_potential = ExtrapolatedPotential(ensemble_model, feature_transformers())
+
+    # samples = read_samples(samples_filepath)
+    # output_energies = extrapolated_potential.evaluate_batch(samples)
+
+    # energies_filepath = samples_filepath.with_suffix(".eng")
+    # np.savetxt(energies_filepath, output_energies)
 
     lattice_constants = np.linspace(1.5, 5.0, 256)
     # lattice_constants = np.array([])
@@ -142,4 +154,10 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main("")
+#    sample_cases_dirpath = Path(".", "sample_cases")
+#    samples_filepaths = list(sample_cases_dirpath.glob("*.sides"))
+#    samples_filepaths = [fp.relative_to(".") for fp in samples_filepaths]
+#
+#    for samples_filepath in samples_filepaths:
+#        main(samples_filepath)

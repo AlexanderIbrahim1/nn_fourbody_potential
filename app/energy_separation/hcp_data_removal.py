@@ -29,13 +29,13 @@ def filtered_samples(samples: NDArray) -> NDArray:
 
 def main() -> None:
     hcp_filepath = Path(".", "data", "abinitio_hcp_data_3901.dat")
-    train_filepath = Path(".", "data", "all_energy_train_filtered.dat")
+    train_filepath = Path(".", "data", "all_energy_train_filtered_no_hcp.dat")
     hcp_data = np.loadtxt(hcp_filepath)
     train_data = np.loadtxt(train_filepath)
 
     filtered_hcp_data = filtered_samples(hcp_data)
-    print(filtered_hcp_data.shape)
-    exit()
+
+    list_of_found_samples = []
 
     for i_hcp, hcp_sample in enumerate(filtered_hcp_data):
         print(i_hcp)
@@ -45,14 +45,17 @@ def main() -> None:
                 print("FOUND!!!")
                 train_data = np.delete(train_data, i, axis=0)
                 flag_found = True
+                list_of_found_samples.append((i_hcp, i))
                 break
         if not flag_found:
-            raise RuntimeError("COULD NOT FIND THE SAMPLE!!!!")
+            print("NOT FOUND!!!")
 
-    filtered_data_filepath = Path(".", "data", "all_energy_train_filtered_no_hcp.dat")
-    side_length_groups = train_data[:, :6]
-    energies = train_data[:, 6]
-    save_fourbody_training_data(filtered_data_filepath, side_length_groups, energies)
+    print(list_of_found_samples)
+
+    # filtered_data_filepath = Path(".", "data", "all_energy_train_filtered_no_hcp.dat")
+    # side_length_groups = train_data[:, :6]
+    # energies = train_data[:, 6]
+    # save_fourbody_training_data(filtered_data_filepath, side_length_groups, energies)
 
 
 if __name__ == "__main__":

@@ -125,7 +125,6 @@ def train_with_fast_decay_data() -> None:
 
     saved_models_dirpath = model_info.get_saved_models_dirpath(params)
     model_saver = ModelSaver(saved_models_dirpath)
-    last_model_filename = model_saver.get_model_filename(params.total_epochs - 1)
 
     write_training_parameters(training_parameters_filepath, params, overwrite=False)
     training.train_model(
@@ -140,6 +139,7 @@ def train_with_fast_decay_data() -> None:
         save_every=20,
     )
 
+    last_model_filename = model_saver.get_model_filename(params.total_epochs - 1)
     test_loss = training.test_model(x_test, y_test, model, last_model_filename)
     print(f"test loss mse = {test_loss}")
     print(f"test loss rmse = {np.sqrt(test_loss)}")

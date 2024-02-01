@@ -19,7 +19,6 @@ class TrainingStateData:
 
 
 def create_training_state_dict(
-    *,
     model: RegressionMultilayerPerceptron,
     optimizer: torch.optim.Optimizer,
     scheduler: torch.optim.lr_scheduler._LRScheduler,

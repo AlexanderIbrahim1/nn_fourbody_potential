@@ -12,10 +12,9 @@ from nn_fourbody_potential.models import TrainingParameters
 
 from nn_fourbody_potential.modelio import ErrorWriter
 
-from ..model_info import get_saved_models_dirpath
+from model_info import get_saved_models_dirpath
 from training_utils import evaluate_model_loss
 from training_utils import TrainingLossAccumulator
-
 import training_state
 
 #    optimizer = torch.optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
@@ -42,21 +41,9 @@ def train_model(
 
     loss_calculator = torch.nn.MSELoss()
 
-    # TODO: move this outside of the function? (make it somebody else's responsibility)
     if continue_training_from_epoch is not None:
-        state_dict = training_state.load_training_state_dict(modelpath, continue_training_from_epoch)
-        state_data = training_state.apply_training_state_dict(state_dict, model_, optimizer_, scheduler_)
-
-        model = state_data.model
-        optimizer = state_data.optimizer
-        scheduler = state_data.scheduler
-        epoch_start = state_data.epoch
         error_file_mode = "a"
     else:
-        model = model_
-        optimizer = optimizer_
-        scheduler = scheduler_
-        epoch_start = 0
         error_file_mode = "w"
 
     training_error_writer = ErrorWriter(modelpath, "training_error_vs_epoch.dat", mode=error_file_mode)
@@ -67,6 +54,21 @@ def train_model(
 
     trainset = PotentialDataset(x_train, y_train)
     trainloader = DataLoader(trainset, batch_size=params.batch_size, num_workers=0, shuffle=True)
+
+    # TODO: move this outside of the function? (make it somebody else's responsibility)
+    if continue_training_from_epoch is not None:
+        state_dict = training_state.load_training_state_dict(saved_models_dirpath, continue_training_from_epoch)
+        state_data = training_state.apply_training_state_dict(state_dict, model_, optimizer_, scheduler_)
+
+        model = state_data.model
+        optimizer = state_data.optimizer
+        scheduler = state_data.scheduler
+        epoch_start = state_data.epoch + 1
+    else:
+        model = model_
+        optimizer = optimizer_
+        scheduler = scheduler_
+        epoch_start = 0
 
     for i_epoch in range(epoch_start, params.total_epochs):
         for x_batch, y_batch in trainloader:
@@ -80,7 +82,7 @@ def train_model(
             optimizer.step()
             optimizer.zero_grad()
 
-        if i_epoch >= 100:
+        if i_epoch >= 10:
             scheduler.step()
 
         epoch_training_loss = training_loss_accumulator.get_and_reset_total_loss()
