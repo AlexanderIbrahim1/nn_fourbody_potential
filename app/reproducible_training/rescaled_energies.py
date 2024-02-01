@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch  # type: ignore
 
@@ -18,7 +17,6 @@ from dispersion4b.coefficients import c12_parahydrogen_midzuno_kihara
 from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF
 from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON
 from nn_fourbody_potential.dataio import load_fourbody_training_data
-from nn_fourbody_potential.full_range import ExtrapolatedPotential
 from nn_fourbody_potential.modelio import write_training_parameters
 from nn_fourbody_potential.modelio.utils import get_model_filename
 from nn_fourbody_potential.models import TrainingParameters
