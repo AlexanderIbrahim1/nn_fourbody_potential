@@ -119,3 +119,18 @@ One drawback of this rescaling is that we might not want the high and low energi
 I want to make the pipeline that splits the data into training, testing, and validation sets more straightforward and reproducible
     - set the seed that splits the data up-front
     - create a separate directory where the split-up data is held
+
+## 2024-02-01
+
+[DONE]
+I created a POC on how to save the training state (model, optimizer, scheduler, RNG seeds)
+- they can be loaded even after training has been interrupted
+
+I need to clean up the subdirectory where data handling and splitting is done
+- put all the relevant data there, move all the unneeded data to another directory with "old stuff"
+- put all the scripts for splitting the data in there (don't mix it with /src)
+
+In each "scripts" directory, there should be some `script_info.py` with info for all the scripts there
+- for example, in a directory for plotting scripts, it should contain the paths to some data files
+  - I don't want to hardcode possibly the same paths in each plotting script
+  - I don't want to put the data into the /src tree; that's for the model, etc.
