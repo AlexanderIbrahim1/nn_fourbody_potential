@@ -129,7 +129,6 @@ dmypy.json
 .pyre/
 
 examples
-app/data/
 app/old_files/
 app/old_models/
 app/models/
