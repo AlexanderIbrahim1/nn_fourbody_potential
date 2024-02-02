@@ -5,17 +5,15 @@ potential energy surface.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
+from numpy.typing import NDArray
 
 SIDELENGTH_COLUMNS = (0, 1, 2, 3, 4, 5)
 ENERGIES_COLUMNS = (6,)
 
 
-def save_fourbody_training_data(
-    filename: Path, sidelengths: np.ndarray[float, float], energies: np.ndarray[float]
-) -> None:
+def save_fourbody_training_data(filename: Path, sidelengths: NDArray, energies: NDArray) -> None:
     """
     The training data is saved as rows of 7 space-separated values. The first six columns
     in each row are the six sidelengths. The last column is the energy.
@@ -27,9 +25,7 @@ def save_fourbody_training_data(
             fout.write(_format_data_line(sidelen, energy))
 
 
-def load_fourbody_training_data(
-    filename: Path,
-) -> Tuple[np.ndarray[float, float], np.ndarray[float]]:
+def load_fourbody_training_data(filename: Path) -> tuple[NDArray, NDArray]:
     """
     The training data is saved as rows of 7 space-separated values. The first six columns
     in each row are the six sidelengths. The last column is the energy.
@@ -42,7 +38,7 @@ def load_fourbody_training_data(
     return sidelengths, energies
 
 
-def save_fourbody_sidelengths(filename: Path, sidelengths: np.ndarray[float, float]) -> None:
+def save_fourbody_sidelengths(filename: Path, sidelengths: NDArray) -> None:
     """The sidelength data is saved as rows of 6 space-separated values."""
     assert sidelengths.shape == (len(sidelengths), len(SIDELENGTH_COLUMNS))
 
@@ -51,21 +47,19 @@ def save_fourbody_sidelengths(filename: Path, sidelengths: np.ndarray[float, flo
             fout.write(_format_sidelength_line(sidelen))
 
 
-def load_fourbody_sidelengths(
-    filename: Path,
-) -> np.ndarray[float, float]:
+def load_fourbody_sidelengths(filename: Path) -> NDArray:
     """This light wrapper function exists to keep the API consistent."""
     return np.loadtxt(filename, usecols=SIDELENGTH_COLUMNS)
 
 
-def _format_data_line(sidelengths: Tuple[float, ...], energy: float) -> str:
+def _format_data_line(sidelengths: tuple[float, ...], energy: float) -> str:
     delimiter = "   "
     formatted_sidelengths = [f"{s: .12e}" for s in sidelengths]
     formatted_energy = f"{energy: .12e}\n"
     return delimiter.join(formatted_sidelengths) + delimiter + formatted_energy
 
 
-def _check_training_data_dimensions(sidelengths: np.ndarray[float, float], energies: np.ndarray[float]) -> None:
+def _check_training_data_dimensions(sidelengths: NDArray, energies: NDArray) -> None:
     """Performs a sanity check on the dimensions of the training data."""
     assert len(sidelengths) == len(energies)
 
