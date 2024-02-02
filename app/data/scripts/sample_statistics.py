@@ -5,10 +5,8 @@ decisions about how to filter out data that doesn't need to be included in the m
 the model's performance.
 """
 
-from pathlib import Path
 from dataclasses import dataclass
 from typing import Callable
-from typing import Union
 
 import numpy as np
 from numpy.typing import NDArray
@@ -64,15 +62,46 @@ def get_sample_statistics(
     )
 
 
+# FILTERING RESULTS
+# HCP DATA
+# apply side length filter (4.5) : 3901 samples -> 1610 samples (remove 2291)
+# apply energy filter (1.0e-3)   : 1610 samples -> 1512 samples (remove 98)
+# SAMPLED DATA
+# apply side length filter (4.5) : 16000 samples -> 16000 samples (remove 0) (obvious; no sample has side length that great)
+# apply energy filter (1.0e-3)   : 16000 samples -> 15870 samples (remove 130)
+#
+# so the energy filter removes about 1.15 % of the data
+# - essentially all of them are long-range anyways
+# - worth removing a small amount of data from training, to improve the stability
+#   - even if their prediction worsens
 if __name__ == "__main__":
 
     def energy_predicate(e: float):
-        return abs(e) > 1.0e-3
+        return abs(e) > 0.0e-3
 
     def mean_side_length_predicate(s: float):
         return s <= 4.5
 
-    side_length_groups, energies = script_utils.load_all_raw_abinitio_sampling_training_data()
-    statistics = get_sample_statistics(side_length_groups, energies, energy_predicate, mean_side_length_predicate)
+    def print_hcp_statistics():
+        filepath = script_utils.RAW_ABINITIO_HCP_DATA_FILEPATH
+        side_length_groups, energies = load_fourbody_training_data(filepath)
+        statistics = get_sample_statistics(side_length_groups, energies, energy_predicate, mean_side_length_predicate)
+        print(statistics)
+        # max_abs_energy                       :  2.59012482e+02
+        # min_abs_energy                       :  9.21450000e-08
+        # n_samples_above_abs_energy_cutoff    : 3901
+        # n_samples_below_mean_distance_cutoff : 1610
+        # n_samples_satisfying_both_cutoffs    : 1610
 
-    print(statistics)
+    def print_distribution_sampled_statistics():
+        side_length_groups, energies = script_utils.load_all_raw_abinitio_sampling_training_data()
+        statistics = get_sample_statistics(side_length_groups, energies, energy_predicate, mean_side_length_predicate)
+        print(statistics)
+        # max_abs_energy                       :  1.78182125e+02
+        # min_abs_energy                       :  1.16646650e-05
+        # n_samples_above_abs_energy_cutoff    : 16000
+        # n_samples_below_mean_distance_cutoff : 16000
+        # n_samples_satisfying_both_cutoffs    : 16000
+
+    print_hcp_statistics()
+    print_distribution_sampled_statistics()
