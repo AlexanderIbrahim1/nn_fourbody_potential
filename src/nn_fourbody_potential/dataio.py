@@ -68,7 +68,7 @@ def _check_training_data_dimensions(sidelengths: NDArray, energies: NDArray) -> 
     assert energies.shape == (n_samples,)
 
 
-def _format_sidelength_line(sidelengths: Tuple[float, ...]) -> str:
+def _format_sidelength_line(sidelengths: tuple[float, ...]) -> str:
     delimiter = "   "
     formatted_sidelengths = [f"{s: .12e}" for s in sidelengths]
     return delimiter.join(formatted_sidelengths) + "\n"
