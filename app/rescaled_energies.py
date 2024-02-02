@@ -10,17 +10,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 import torch  # type: ignore
 
 from dispersion4b.coefficients import c12_parahydrogen_midzuno_kihara
 from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF
 from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON
-from nn_fourbody_potential.dataio import load_fourbody_training_data
-from nn_fourbody_potential.full_range import ExtrapolatedPotential
-from nn_fourbody_potential.modelio import write_training_parameters
-from nn_fourbody_potential.modelio.utils import get_model_filename
 from nn_fourbody_potential.models import TrainingParameters
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
@@ -29,7 +24,8 @@ from nn_fourbody_potential.transformations import MinimumPermutationTransformer
 from nn_fourbody_potential.transformations import StandardizeTransformer
 from nn_fourbody_potential import rescaling
 
-import model_info
+import nn_fourbody_potential.modelio as modelio
+
 import training
 
 import reproducible_training.training as rep_training
@@ -58,7 +54,7 @@ def get_training_parameters(
         layers=[8, 16, 16, 8],
         learning_rate=2.0e-4,
         weight_decay=0.0,
-        training_size=model_info.number_of_lines(data_filepath),
+        training_size=modelio.number_of_lines(data_filepath),
         total_epochs=100,
         # total_epochs=10000,
         batch_size=2048,
@@ -131,14 +127,14 @@ def get_toy_decay_potential() -> rescaling.RescalingPotential:
 #     y_valid = y_valid.to(device)
 #     model = model.to(device)
 #
-#     modelpath = model_info.get_path_to_model(params)
+#     modelpath = modelio.get_path_to_model(params)
 #     if not modelpath.exists():
 #         modelpath.mkdir()
 #
-#     if not (params_filepath := model_info.get_training_parameters_filepath(params)).exists():
-#         write_training_parameters(params_filepath, params, overwrite=False)
+#     if not (params_filepath := modelio.get_training_parameters_filepath(params)).exists():
+#         modelio.write_training_parameters(params_filepath, params, overwrite=False)
 #
-#     saved_models_dirpath = model_info.get_saved_models_dirpath(params)
+#     saved_models_dirpath = modelio.get_saved_models_dirpath(params)
 #
 #     training.train_model(
 #         x_train,
@@ -154,7 +150,7 @@ def get_toy_decay_potential() -> rescaling.RescalingPotential:
 #         # continue_training_from_epoch=4500,
 #     )
 #
-#     last_model_filename = get_model_filename(saved_models_dirpath, params.total_epochs - 1)
+#     last_model_filename = modelio.get_model_filename(saved_models_dirpath, params.total_epochs - 1)
 #     test_loss = training.test_model(x_test, y_test, model, last_model_filename)
 #     print(f"test loss mse = {test_loss}")
 #     print(f"test loss rmse = {np.sqrt(test_loss)}")
@@ -212,14 +208,14 @@ def rep_train_with_rescaling() -> None:
     y_valid = y_valid.to(device)
     model = model.to(device)
 
-    modelpath = model_info.get_path_to_model(params)
+    modelpath = modelio.get_path_to_model(params)
     if not modelpath.exists():
         modelpath.mkdir()
 
-    if not (params_filepath := model_info.get_training_parameters_filepath(params)).exists():
-        write_training_parameters(params_filepath, params, overwrite=False)
+    if not (params_filepath := modelio.get_training_parameters_filepath(params)).exists():
+        modelio.write_training_parameters(params_filepath, params, overwrite=False)
 
-    saved_models_dirpath = model_info.get_saved_models_dirpath(params)
+    saved_models_dirpath = modelio.get_saved_models_dirpath(params)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.99)
@@ -240,7 +236,7 @@ def rep_train_with_rescaling() -> None:
         # continue_training_from_epoch=4500,
     )
 
-    last_model_filename = get_model_filename(saved_models_dirpath, params.total_epochs - 1)
+    last_model_filename = modelio.get_model_filename(saved_models_dirpath, params.total_epochs - 1)
     test_loss = rep_training.test_model(x_test, y_test, model, last_model_filename)
     print(f"test loss mse = {test_loss}")
     print(f"test loss rmse = {np.sqrt(test_loss)}")
@@ -272,7 +268,7 @@ if __name__ == "__main__":
 
     # energy_model = rescaling.RescalingEnergyModel(model, rev_rescaler)
 
-    # transforms = model_info.get_data_transforms_flattening()
+    # transforms = modelio.get_data_transforms_flattening()
     # extrapolated_potential = ExtrapolatedPotential(energy_model, transforms, pass_in_sidelengths_to_network=True)
 
     # sidelengths = np.linspace(1.9, 5.0, 256)

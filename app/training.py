@@ -15,14 +15,9 @@ from nn_fourbody_potential.dataset import PotentialDataset
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.models import TrainingParameters
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
-
-from nn_fourbody_potential.modelio import CheckpointSaver
-from nn_fourbody_potential.modelio import CheckpointLoader
-from nn_fourbody_potential.modelio import ErrorWriter
-
 from nn_fourbody_potential.transformations import transform_sidelengths_data
 
-import model_info
+import nn_fourbody_potential.modelio as modelio
 
 N_FEATURES = 6
 N_OUTPUTS = 1
@@ -142,14 +137,14 @@ def train_model(
     save_every: int,
     # continue_training_from_epoch: Optional[int] = None,
 ) -> None:
-    saved_models_dirpath = model_info.get_saved_models_dirpath(params)
-    checkpoint_saver = CheckpointSaver(saved_models_dirpath)
+    saved_models_dirpath = modelio.get_saved_models_dirpath(params)
+    checkpoint_saver = modelio.CheckpointSaver(saved_models_dirpath)
 
     # TODO: maybe change back?
     loss_calculator = MSLELoss()
 
     # if continue_training_from_epoch is not None:
-    #     checkpoint_loader = CheckpointLoader(saved_models_dirpath)
+    #     checkpoint_loader = modelio.CheckpointLoader(saved_models_dirpath)
     #     checkpoint_data = checkpoint_loader.load_checkpoint(
     #         continue_training_from_epoch, default_model, default_optimizer
     #     )
@@ -167,9 +162,11 @@ def train_model(
     model = default_model
     error_file_mode = "w"
 
-    training_error_writer = ErrorWriter(modelpath, "training_error_vs_epoch.dat", mode=error_file_mode)
-    training_nohcp_error_writer = ErrorWriter(modelpath, "training_nohcp_error_vs_epoch.dat", mode=error_file_mode)
-    validation_error_writer = ErrorWriter(modelpath, "validation_error_vs_epoch.dat", mode=error_file_mode)
+    training_error_writer = modelio.ErrorWriter(modelpath, "training_error_vs_epoch.dat", mode=error_file_mode)
+    training_nohcp_error_writer = modelio.ErrorWriter(
+        modelpath, "training_nohcp_error_vs_epoch.dat", mode=error_file_mode
+    )
+    validation_error_writer = modelio.ErrorWriter(modelpath, "validation_error_vs_epoch.dat", mode=error_file_mode)
 
     trainset = PotentialDataset(x_train, y_train)
     # epoch_to_batch_size_dict = {
