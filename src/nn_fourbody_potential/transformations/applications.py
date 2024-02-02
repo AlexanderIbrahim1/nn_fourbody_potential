@@ -9,6 +9,7 @@ from copy import deepcopy
 from typing import Sequence
 
 import numpy as np
+from numpy.typing import NDArray
 
 from nn_fourbody_potential.transformations.transformers import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations.transformers import SixSideLengths
@@ -16,8 +17,7 @@ from nn_fourbody_potential.transformations.transformers import TransformedSideLe
 
 
 def transform_sidelengths_data(
-    sidelengths: np.ndarray[float, float],
-    transforms: Sequence[SixSideLengthsTransformer],
+    sidelengths: NDArray, transforms: Sequence[SixSideLengthsTransformer]
 ) -> np.ndarray[float, float]:
     """Apply the 'apply_transformations()' method to a sequence of SixSideLengths instances."""
     return np.array([_apply_transformations(sidelens, transforms) for sidelens in sidelengths])

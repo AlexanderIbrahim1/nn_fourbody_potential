@@ -7,7 +7,7 @@ import torch
 import numpy as np
 
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
-from nn_fourbody_potential.modelio.utils import get_model_filename
+from nn_fourbody_potential.modelio import get_model_filename
 
 
 @dataclasses.dataclass
@@ -49,7 +49,7 @@ def save_training_state_dict(savepath: Union[Path, str], training_state_dict: di
 
 
 def load_training_state_dict(savepath: Union[Path, str], epoch: int) -> dict[str, Any]:
-    model_filename = get_model_filename(savepath, epoch)
+    model_filename = get_model_filename(Path(savepath), epoch)
     training_state_dict = torch.load(model_filename)
 
     state_dict_epoch = training_state_dict["epoch"]

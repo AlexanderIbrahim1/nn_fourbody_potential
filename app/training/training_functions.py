@@ -9,16 +9,10 @@ from torch.utils.data import DataLoader
 from nn_fourbody_potential.dataset import PotentialDataset
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.models import TrainingParameters
+import nn_fourbody_potential.modelio as modelio
 
-from nn_fourbody_potential.modelio import ErrorWriter
-
-from model_info import get_saved_models_dirpath
-from training_utils import evaluate_model_loss
-from training_utils import TrainingLossAccumulator
 import training_state
-
-#    optimizer = torch.optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
-#    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.99)
+import training_utils
 
 
 def train_model(
@@ -37,7 +31,7 @@ def train_model(
     save_every: int,
     continue_training_from_epoch: Optional[int] = None,
 ) -> None:
-    saved_models_dirpath = get_saved_models_dirpath(params)
+    saved_models_dirpath = modelio.get_saved_models_dirpath(params, Path.cwd())
 
     loss_calculator = torch.nn.MSELoss()
 
@@ -46,11 +40,13 @@ def train_model(
     else:
         error_file_mode = "w"
 
-    training_error_writer = ErrorWriter(modelpath, "training_error_vs_epoch.dat", mode=error_file_mode)
-    training_nohcp_error_writer = ErrorWriter(modelpath, "training_nohcp_error_vs_epoch.dat", mode=error_file_mode)
-    validation_error_writer = ErrorWriter(modelpath, "validation_error_vs_epoch.dat", mode=error_file_mode)
+    training_error_writer = modelio.ErrorWriter(modelpath, "training_error_vs_epoch.dat", mode=error_file_mode)
+    training_nohcp_error_writer = modelio.ErrorWriter(
+        modelpath, "training_nohcp_error_vs_epoch.dat", mode=error_file_mode
+    )
+    validation_error_writer = modelio.ErrorWriter(modelpath, "validation_error_vs_epoch.dat", mode=error_file_mode)
 
-    training_loss_accumulator = TrainingLossAccumulator()
+    training_loss_accumulator = training_utils.TrainingLossAccumulator()
 
     trainset = PotentialDataset(x_train, y_train)
     trainloader = DataLoader(trainset, batch_size=params.batch_size, num_workers=0, shuffle=True)
@@ -85,14 +81,16 @@ def train_model(
         if i_epoch >= 10:
             scheduler.step()
 
+        # fmt: off
         epoch_training_loss = training_loss_accumulator.get_and_reset_total_loss()
         training_error_writer.append(i_epoch, epoch_training_loss)
 
-        epoch_training_nohcp_loss = evaluate_model_loss(model, loss_calculator, x_train_nohcp, y_train_nohcp)
+        epoch_training_nohcp_loss = training_utils.evaluate_model_loss(model, loss_calculator, x_train_nohcp, y_train_nohcp)
         training_nohcp_error_writer.append(i_epoch, epoch_training_nohcp_loss)
 
-        epoch_validation_loss = evaluate_model_loss(model, loss_calculator, x_valid, y_valid)
+        epoch_validation_loss = training_utils.evaluate_model_loss(model, loss_calculator, x_valid, y_valid)
         validation_error_writer.append(i_epoch, epoch_validation_loss)
+        # fmt: on
 
         print(f"(epoch, training_loss)       = ({i_epoch}, {epoch_training_loss:.8f})")
         print(f"(epoch, training_nohcp_loss) = ({i_epoch}, {epoch_training_nohcp_loss:.8f})")
@@ -102,7 +100,7 @@ def train_model(
             state_dict = training_state.create_training_state_dict(model, optimizer, scheduler, i_epoch)
             training_state.save_training_state_dict(saved_models_dirpath, state_dict)
 
-    state_dict = training_state.create_training_state_dict(model, optimizer, scheduler, i_epoch)
+    state_dict = training_state.create_training_state_dict(model, optimizer, scheduler, params.total_epochs - 1)
     training_state.save_training_state_dict(saved_models_dirpath, state_dict)
 
 
@@ -111,11 +109,11 @@ def test_model(
     y_test: torch.Tensor,
     model: RegressionMultilayerPerceptron,
     modelfile: Path,
-) -> None:
+) -> float:
     checkpoint = torch.load(modelfile)
     model.load_state_dict(checkpoint["model_state_dict"])
     loss_calculator = torch.nn.MSELoss()
 
-    testing_loss = evaluate_model_loss(model, loss_calculator, x_test, y_test)
+    testing_loss = training_utils.evaluate_model_loss(model, loss_calculator, x_test, y_test)
 
     return testing_loss

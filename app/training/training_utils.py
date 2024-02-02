@@ -1,34 +1,22 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 from typing import Sequence
-from typing import Tuple
 
 import numpy as np
-
+from numpy.typing import NDArray
 import torch
-from torch.utils.data import DataLoader
 
 from nn_fourbody_potential.dataio import load_fourbody_training_data
-from nn_fourbody_potential.dataset import PotentialDataset
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
-from nn_fourbody_potential.models import TrainingParameters
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
-
-from nn_fourbody_potential.modelio import CheckpointSaver
-from nn_fourbody_potential.modelio import CheckpointLoader
-from nn_fourbody_potential.modelio import ErrorWriter
-
 from nn_fourbody_potential.transformations import transform_sidelengths_data
-
-import model_info
 
 N_FEATURES = 6
 N_OUTPUTS = 1
 
 
-def add_dummy_dimension(data: np.ndarray[float]) -> np.ndarray[float, float]:
+def add_dummy_dimension(data: NDArray) -> NDArray:
     """Takes an array of shape (n,), and returns an array of shape (n, 1)"""
     assert len(data.shape) == 1
 
@@ -50,7 +38,7 @@ def check_data_sizes(
 
 def prepared_data(
     data_filepath: Path, transformers: Sequence[SixSideLengthsTransformer]
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """Load the sidelengths and energies from 'data_filepath', apply the transformations,
     and turn the sidelengths and energies into torch tensors.
     """
@@ -77,7 +65,7 @@ def evaluate_model_loss(
 
     with torch.no_grad():
         output_data_predicted = model(input_data)
-        loss = loss_calculator(output_data, output_data_predicted)
+        loss: torch.Tensor = loss_calculator(output_data, output_data_predicted)
 
     model.train()
     return loss.item()

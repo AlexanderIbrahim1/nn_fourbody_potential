@@ -6,6 +6,10 @@ from pathlib import Path
 from nn_fourbody_potential.models import TrainingParameters
 
 
+def get_model_filename(savepath: Path, epoch: int) -> Path:
+    return Path(savepath, f"nnpes_{epoch:0>5d}.pth")
+
+
 def write_training_parameters(savepath: Path, params: TrainingParameters, overwrite: bool = False) -> None:
     if savepath.exists() and not overwrite:
         raise FileExistsError(
