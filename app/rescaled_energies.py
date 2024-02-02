@@ -24,6 +24,11 @@ from nn_fourbody_potential.transformations import MinimumPermutationTransformer
 from nn_fourbody_potential.transformations import StandardizeTransformer
 from nn_fourbody_potential import rescaling
 
+from nn_fourbody_potential_data.data_paths import FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH
+from nn_fourbody_potential_data.data_paths import FILTERED_SPLIT_ABINITIO_TRAIN_DATA_DIRPATH
+from nn_fourbody_potential_data.data_paths import FILTERED_SPLIT_ABINITIO_TRAIN_NOHCP_DATA_DIRPATH
+from nn_fourbody_potential_data.data_paths import FILTERED_SPLIT_ABINITIO_VALID_DATA_DIRPATH
+
 import nn_fourbody_potential.modelio as modelio
 
 import training
@@ -157,11 +162,11 @@ def get_toy_decay_potential() -> rescaling.RescalingPotential:
 
 
 def rep_train_with_rescaling() -> None:
-    training_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "train.dat")
-    training_nohcp_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "train_nohcp.dat")
-    testing_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "test.dat")
-    validation_data_filepath = Path("energy_separation", "data_splitting", "filtered_split_data", "valid.dat")
-    other_info = "_rescaling_model_filtered_reptraining0"
+    training_data_filepath = FILTERED_SPLIT_ABINITIO_TRAIN_DATA_DIRPATH
+    training_nohcp_data_filepath = FILTERED_SPLIT_ABINITIO_TRAIN_NOHCP_DATA_DIRPATH
+    testing_data_filepath = FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH
+    validation_data_filepath = FILTERED_SPLIT_ABINITIO_VALID_DATA_DIRPATH
+    other_info = "_rescaling_model_filtered_reptraining1"
 
     rescaling_potential = get_toy_decay_potential()
     transforms = get_data_transforms_flattening()
