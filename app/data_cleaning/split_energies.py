@@ -17,7 +17,7 @@ from sample_splitter import DataSplitFractions
 from sample_splitter import DataSplitSizes
 from sample_splitter import fractions_to_sizes
 
-import script_utils
+import nn_fourbody_potential_data.data_paths as data_paths
 
 
 @dataclasses.dataclass
@@ -61,12 +61,12 @@ if __name__ == "__main__":
     fractions = DataSplitFractions(0.75, 0.125, 0.125)
     data_filter = MaxSideLengthSampleFilter(4.5)
     filepaths = FilePaths(
-        hcp_filepath=script_utils.RAW_ABINITIO_HCP_DATA_FILEPATH,
-        sampled_filepath=script_utils.RAW_ABINITIO_ALL_SAMPLED_DATA_FILEPATH,
-        train_save_filepath=script_utils.FILTERED_SPLIT_ABINITIO_TRAIN_DATA_DIRPATH,
-        train_nohcp_save_filepath=script_utils.FILTERED_SPLIT_ABINITIO_TRAIN_NOHCP_DATA_DIRPATH,
-        test_save_filepath=script_utils.FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH,
-        valid_save_filepath=script_utils.FILTERED_SPLIT_ABINITIO_VALID_DATA_DIRPATH,
+        hcp_filepath=data_paths.RAW_ABINITIO_HCP_DATA_FILEPATH,
+        sampled_filepath=data_paths.RAW_ABINITIO_ALL_SAMPLED_DATA_FILEPATH,
+        train_save_filepath=data_paths.FILTERED_SPLIT_ABINITIO_TRAIN_DATA_DIRPATH,
+        train_nohcp_save_filepath=data_paths.FILTERED_SPLIT_ABINITIO_TRAIN_NOHCP_DATA_DIRPATH,
+        test_save_filepath=data_paths.FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH,
+        valid_save_filepath=data_paths.FILTERED_SPLIT_ABINITIO_VALID_DATA_DIRPATH,
     )
 
     main(seed, fractions, data_filter, filepaths)

@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nn_fourbody_potential_data"
+version = "0.1.0"
+authors = [
+    {name = "Alexander Ibrahim", email = "a68ibrahim@uwaterloo.ca"},
+]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only"
+]
+requires-python = ">=3.9"
+
+[tool.mypy]
+mypy_path = "data"
+check_untyped_defs = true
+disallow_any_generics = true
+ignore_missing_imports = true
+no_implicit_optional = true
+show_error_codes = true
+strict_equality = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+no_implicit_reexport = true
+implicit_reexport = true
+
+[tool.black]
+line-length = 120

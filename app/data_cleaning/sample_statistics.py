@@ -12,8 +12,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from nn_fourbody_potential.dataio import load_fourbody_training_data
-
-import script_utils
+import nn_fourbody_potential_data.data_paths as data_paths
 
 
 @dataclass
@@ -83,7 +82,7 @@ if __name__ == "__main__":
         return s <= 4.5
 
     def print_hcp_statistics():
-        filepath = script_utils.RAW_ABINITIO_HCP_DATA_FILEPATH
+        filepath = data_paths.RAW_ABINITIO_HCP_DATA_FILEPATH
         side_length_groups, energies = load_fourbody_training_data(filepath)
         statistics = get_sample_statistics(side_length_groups, energies, energy_predicate, mean_side_length_predicate)
         print(statistics)
@@ -94,7 +93,8 @@ if __name__ == "__main__":
         # n_samples_satisfying_both_cutoffs    : 1610
 
     def print_distribution_sampled_statistics():
-        side_length_groups, energies = script_utils.load_all_raw_abinitio_sampling_training_data()
+        filepath = data_paths.RAW_ABINITIO_ALL_SAMPLED_DATA_FILEPATH
+        side_length_groups, energies = load_fourbody_training_data(filepath)
         statistics = get_sample_statistics(side_length_groups, energies, energy_predicate, mean_side_length_predicate)
         print(statistics)
         # max_abs_energy                       :  1.78182125e+02
