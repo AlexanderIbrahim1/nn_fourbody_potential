@@ -132,6 +132,7 @@ examples
 app/old_files/
 app/old_models/
 app/models/
+app/training/models/
 app/sanity_checks/
 app/energy_separation/models/
 app/figures/
