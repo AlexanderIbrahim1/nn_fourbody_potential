@@ -9,13 +9,22 @@ import numpy as np
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.modelio import get_model_filename
 
+Optimizer = torch.optim.Optimizer
+Scheduler = torch.optim.lr_scheduler._LRScheduler
+
 
 @dataclasses.dataclass
 class TrainingStateData:
     model: RegressionMultilayerPerceptron
-    optimizer: torch.optim.Optimizer
-    scheduler: torch.optim.lr_scheduler._LRScheduler
-    epoch: int
+    optimizer: Optimizer
+    scheduler: Scheduler
+    epoch_start: int
+
+    # NOTE: do not use `dataclasses.astuple()`; it creates copies of the data members, which removes
+    # the reference connecting the scheduler and optimizer, and prevents the scheduler from updating
+    # the optimizer at all
+    def unpack(self) -> tuple[RegressionMultilayerPerceptron, Optimizer, Scheduler, int]:
+        return (self.model, self.optimizer, self.scheduler, self.epoch_start)
 
 
 def create_training_state_dict(

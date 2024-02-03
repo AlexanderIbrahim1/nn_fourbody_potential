@@ -15,6 +15,31 @@ import training_state
 import training_utils
 
 
+def update_training_state_data(
+    state_data: training_state.TrainingStateData,
+    saved_models_dirpath: Path,
+    continue_training_from_epoch: Optional[int],
+) -> training_state.TrainingStateData:
+    if continue_training_from_epoch is not None:
+        model_, optimizer_, scheduler_, _ = state_data.unpack()
+        state_dict = training_state.load_training_state_dict(saved_models_dirpath, continue_training_from_epoch)
+        new_state_data = training_state.apply_training_state_dict(state_dict, model_, optimizer_, scheduler_)
+        new_state_data.epoch_start += 1
+    else:
+        new_state_data = state_data
+
+    return new_state_data
+
+
+def get_error_file_mode(continue_training_from_epoch: Optional[int]) -> str:
+    if continue_training_from_epoch is not None:
+        error_file_mode = "a"
+    else:
+        error_file_mode = "w"
+
+    return error_file_mode
+
+
 def train_model(
     x_train: torch.Tensor,
     y_train: torch.Tensor,
@@ -32,39 +57,23 @@ def train_model(
     continue_training_from_epoch: Optional[int] = None,
 ) -> None:
     saved_models_dirpath = modelio.get_saved_models_dirpath(params, Path.cwd())
-
     loss_calculator = torch.nn.MSELoss()
 
-    if continue_training_from_epoch is not None:
-        error_file_mode = "a"
-    else:
-        error_file_mode = "w"
-
+    # fmt: off
+    error_file_mode = get_error_file_mode(continue_training_from_epoch)
     training_error_writer = modelio.ErrorWriter(modelpath, "training_error_vs_epoch.dat", mode=error_file_mode)
-    training_nohcp_error_writer = modelio.ErrorWriter(
-        modelpath, "training_nohcp_error_vs_epoch.dat", mode=error_file_mode
-    )
+    training_nohcp_error_writer = modelio.ErrorWriter(modelpath, "training_nohcp_error_vs_epoch.dat", mode=error_file_mode)
     validation_error_writer = modelio.ErrorWriter(modelpath, "validation_error_vs_epoch.dat", mode=error_file_mode)
+    # fmt: on
 
     training_loss_accumulator = training_utils.TrainingLossAccumulator()
 
     trainset = PotentialDataset(x_train, y_train)
     trainloader = DataLoader(trainset, batch_size=params.batch_size, num_workers=0, shuffle=True)
 
-    # TODO: move this outside of the function? (make it somebody else's responsibility)
-    if continue_training_from_epoch is not None:
-        state_dict = training_state.load_training_state_dict(saved_models_dirpath, continue_training_from_epoch)
-        state_data = training_state.apply_training_state_dict(state_dict, model_, optimizer_, scheduler_)
-
-        model = state_data.model
-        optimizer = state_data.optimizer
-        scheduler = state_data.scheduler
-        epoch_start = state_data.epoch + 1
-    else:
-        model = model_
-        optimizer = optimizer_
-        scheduler = scheduler_
-        epoch_start = 0
+    state_data = training_state.TrainingStateData(model_, optimizer_, scheduler_, 0)
+    state_data = update_training_state_data(state_data, saved_models_dirpath, continue_training_from_epoch)
+    model, optimizer, scheduler, epoch_start = state_data.unpack()
 
     for i_epoch in range(epoch_start, params.total_epochs):
         for x_batch, y_batch in trainloader:
@@ -78,7 +87,7 @@ def train_model(
             optimizer.step()
             optimizer.zero_grad()
 
-        if i_epoch >= 10:
+        if i_epoch >= 100:
             scheduler.step()
 
         # fmt: off
