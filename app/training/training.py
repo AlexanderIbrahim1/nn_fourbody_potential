@@ -141,7 +141,7 @@ def train_fourbody_model() -> None:
         scheduler,
         modelpath,
         save_every=50,
-        continue_training_from_epoch=8850,
+        # continue_training_from_epoch=15200,
     )
 
     last_model_filename = modelio.get_model_filename(saved_models_dirpath, params.total_epochs - 1)
