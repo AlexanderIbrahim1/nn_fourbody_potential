@@ -9,56 +9,23 @@ From this information, we can make an informed choice on how to separate the
 training data into regimes for the ensemble neural network.
 """
 
-import sys
-
-sys.path.insert(0, "..")
-
-from pathlib import Path
-
 import matplotlib.pyplot as plt
-import numpy as np
-import torch
 
-import model_info
-import training
+import nn_fourbody_potential.dataio as dataio
+import nn_fourbody_potential_data.data_paths as data_paths
 
 
 def plot_energies() -> None:
-    # hcp_filepath = Path("..", "data", "abinitio_hcp_data_3901_2.2_4.5.dat")
-    slowdecay_training_filepath = Path("..", "data", "abinitio_training_data_5000_2.2_4.5.dat")
-    slowdecay_testing_filepath = Path("..", "data", "abinitio_testing_data_2000_2.2_4.5.dat")
-    slowdecay_validation_filepath = Path("..", "data", "abinitio_validation_data_2000_2.2_4.5.dat")
-    fastdecay_training_filepath = Path("..", "data", "abinitio_fastdecay_data_1500_2.2_4.5.dat")
-    veryfastdecay_training_filepath = Path("..", "data", "abinitio_veryfastdecay_data_1500_2.2_4.5.dat")
+    _, energies_slowdecay = dataio.load_fourbody_training_data(data_paths.RAW_ABINITIO_SLOWDECAY_DATA_FILEPATH)
+    _, energies_fastdecay = dataio.load_fourbody_training_data(data_paths.RAW_ABINITIO_FASTDECAY_DATA_FILEPATH)
+    _, energies_veryslowdecay = dataio.load_fourbody_training_data(data_paths.RAW_ABINITIO_VERYSLOWDECAY_DATA_FILEPATH)
+    _, energies_veryfastdecay = dataio.load_fourbody_training_data(data_paths.RAW_ABINITIO_VERYFASTDECAY_DATA_FILEPATH)
 
-    transformers = model_info.get_data_transforms()
-    # _, energies_hcp = training.prepared_data(hcp_filepath, transformers)
-    _, energies_slowdecay_training = training.prepared_data(slowdecay_training_filepath, transformers)
-    _, energies_slowdecay_testing = training.prepared_data(slowdecay_testing_filepath, transformers)
-    _, energies_slowdecay_validation = training.prepared_data(slowdecay_validation_filepath, transformers)
-    _, energies_fastdecay_training = training.prepared_data(fastdecay_training_filepath, transformers)
-    _, energies_veryfastdecay_training = training.prepared_data(veryfastdecay_training_filepath, transformers)
-
-    energies_combined = (
-        torch.concatenate(
-            (
-                #            energies_hcp,
-                energies_slowdecay_training,
-                energies_slowdecay_testing,
-                energies_slowdecay_validation,
-                energies_fastdecay_training,
-                energies_veryfastdecay_training,
-            )
-        )
-        .reshape(-1)
-        .cpu()
-        .detach()
-        .numpy()
-    )
-
-    # energies_combined = np.log(np.abs(energies_combined))
-
-    plt.hist(energies_combined, bins=1000)
+    n_bins = 256
+    plt.hist(energies_slowdecay, bins=n_bins, color="C0", alpha=0.5)
+    plt.hist(energies_fastdecay, bins=n_bins, color="C1", alpha=0.5)
+    plt.hist(energies_veryslowdecay, bins=n_bins, color="C2", alpha=0.5)
+    plt.hist(energies_veryfastdecay, bins=n_bins, color="C3", alpha=0.5)
     plt.show()
 
 
