@@ -36,6 +36,14 @@ import training_functions
 from training_utils import N_FEATURES
 from training_utils import N_OUTPUTS
 
+class MSLELoss(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = torch.nn.MSELoss()
+
+    def forward(self, pred, actual):
+        return self.mse(torch.log(pred + 1.0), torch.log(actual + 1.0))
+
 
 def get_data_transforms_flattening() -> list[SixSideLengthsTransformer]:
     min_sidelen = 2.2
@@ -81,7 +89,7 @@ def train_fourbody_model() -> None:
     training_nohcp_data_filepath = FILTERED_SPLIT_ABINITIO_TRAIN_NOHCP_DATA_DIRPATH
     testing_data_filepath = FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH
     validation_data_filepath = FILTERED_SPLIT_ABINITIO_VALID_DATA_DIRPATH
-    other_info = "_rescaling_model_large0"
+    other_info = "_rescaling_msle_model_large0"
 
     rescaling_potential = get_toy_decay_potential()
     transforms = get_data_transforms_flattening()
@@ -98,7 +106,7 @@ def train_fourbody_model() -> None:
     side_length_groups_test, energies_test = load_fourbody_training_data(testing_data_filepath)
     side_length_groups_valid, energies_valid = load_fourbody_training_data(validation_data_filepath)
 
-    x_train, y_train, res_limits = rescaling.prepare_rescaled_data(side_length_groups_train, energies_train, transforms, rescaling_potential)
+    x_train, y_train, res_limits = rescaling.prepare_rescaled_data(side_length_groups_train, energies_train, transforms, rescaling_potential, (0, 1))
     x_train_nohcp, y_train_nohcp = rescaling.prepare_rescaled_data_with_rescaling_limits(side_length_groups_train_nohcp, energies_train_nohcp, transforms, rescaling_potential, res_limits)
     x_test, y_test = rescaling.prepare_rescaled_data_with_rescaling_limits(side_length_groups_test, energies_test, transforms, rescaling_potential, res_limits)
     x_valid, y_valid = rescaling.prepare_rescaled_data_with_rescaling_limits(side_length_groups_valid, energies_valid, transforms, rescaling_potential, res_limits)
@@ -128,6 +136,8 @@ def train_fourbody_model() -> None:
     optimizer = torch.optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.99)
 
+    loss_calculator = torch.nn.MSELoss()
+
     training_functions.train_model(
         x_train,
         y_train,
@@ -140,6 +150,7 @@ def train_fourbody_model() -> None:
         optimizer,
         scheduler,
         modelpath,
+        loss_calculator,
         save_every=50,
         # continue_training_from_epoch=15200,
     )

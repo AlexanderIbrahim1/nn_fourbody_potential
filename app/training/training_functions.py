@@ -52,12 +52,12 @@ def train_model(
     optimizer_: torch.optim.Optimizer,
     scheduler_: torch.optim.lr_scheduler._LRScheduler,
     modelpath: Path,
+    loss_calculator: torch.Module,
     *,
     save_every: int,
     continue_training_from_epoch: Optional[int] = None,
 ) -> None:
     saved_models_dirpath = modelio.get_saved_models_dirpath(params, Path.cwd())
-    loss_calculator = torch.nn.MSELoss()
 
     # fmt: off
     error_file_mode = get_error_file_mode(continue_training_from_epoch)
