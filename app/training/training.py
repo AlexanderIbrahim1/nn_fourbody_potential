@@ -106,7 +106,7 @@ def train_fourbody_model() -> None:
     side_length_groups_test, energies_test = load_fourbody_training_data(testing_data_filepath)
     side_length_groups_valid, energies_valid = load_fourbody_training_data(validation_data_filepath)
 
-    x_train, y_train, res_limits = rescaling.prepare_rescaled_data(side_length_groups_train, energies_train, transforms, rescaling_potential, (0, 1))
+    x_train, y_train, res_limits = rescaling.prepare_rescaled_data(side_length_groups_train, energies_train, transforms, rescaling_potential)
     x_train_nohcp, y_train_nohcp = rescaling.prepare_rescaled_data_with_rescaling_limits(side_length_groups_train_nohcp, energies_train_nohcp, transforms, rescaling_potential, res_limits)
     x_test, y_test = rescaling.prepare_rescaled_data_with_rescaling_limits(side_length_groups_test, energies_test, transforms, rescaling_potential, res_limits)
     x_valid, y_valid = rescaling.prepare_rescaled_data_with_rescaling_limits(side_length_groups_valid, energies_valid, transforms, rescaling_potential, res_limits)
