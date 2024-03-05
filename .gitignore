@@ -137,6 +137,7 @@ app/sanity_checks/
 app/energy_separation/models/
 app/figures/
 app/reproducible_training/models/
+app/plotting/
 
 # vscode
 .vscode
