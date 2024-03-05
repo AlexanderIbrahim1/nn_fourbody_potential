@@ -22,6 +22,20 @@ from nn_fourbody_potential import rescaling
 
 from nn_fourbody_potential_data.data_paths import FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH
 
+SIZE_TO_LABEL: dict[int, str] = {
+    8: "8_16_16_8",
+    16: "16_32_32_16",
+    32: "32_64_64_32",
+    64: "64_128_128_64",
+}
+
+SIZE_TO_LAYERS: dict[int, list[int]] = {
+    8: [8, 16, 16, 8],
+    16: [16, 32, 32, 16],
+    32: [32, 64, 64, 32],
+    64: [64, 128, 128, 64],
+}
+
 
 def feature_transformers() -> list[SixSideLengthsTransformer]:
     min_sidelen = 2.2
@@ -44,35 +58,21 @@ def get_rescaling_function() -> rescaling.RescalingPotential:
 
 
 def model_filepath(size: int) -> Path:
-    size_to_label: dict[int, str] = {
-        8: "8_16_16_8",
-        16: "16_32_32_16",
-        32: "32_64_64_32",
-        64: "64_128_128_64",
-    }
-
     model_dirpath = Path("/home/a68ibrah/research/four_body_interactions/nn_fourbody_potential/models")
-    model_filename = f"fourbodypara_{size_to_label[size]}.pth"
+    model_filename = f"fourbodypara_{SIZE_TO_LABEL[size]}.pth"
 
     return model_dirpath / model_filename
 
 
 def load_model(size: int) -> RegressionMultilayerPerceptron:
-    size_to_layers: dict[int, list[int]] = {
-        8: [8, 16, 16, 8],
-        16: [16, 32, 32, 16],
-        32: [32, 64, 64, 32],
-        64: [64, 128, 128, 64],
-    }
-
     n_features = 6
     n_outputs = 1
-    layers = size_to_layers[size]
+    layers = SIZE_TO_LAYERS[size]
     model = RegressionMultilayerPerceptron(n_features, n_outputs, layers)
 
     filepath = model_filepath(size)
     checkpoint = torch.load(filepath)
-    model.load_state_dict(checkpoint['model_state_dict'])
+    model.load_state_dict(checkpoint["model_state_dict"])
 
     return model
 
@@ -85,7 +85,9 @@ def main(size: int) -> None:
     transformers = feature_transformers()
 
     rescaling_function = get_rescaling_function()
-    rescaling_limits_to_energies = rescaling.RescalingLimits(from_left=-1.0, from_right=1.0, to_left=-3.2619903087615967, to_right=8.64592170715332)
+    rescaling_limits_to_energies = rescaling.RescalingLimits(
+        from_left=-1.0, from_right=1.0, to_left=-3.2619903087615967, to_right=8.64592170715332
+    )
     rescaler_output_to_energies = rescaling.ReverseEnergyRescaler(rescaling_function, rescaling_limits_to_energies)
 
     input_data = transform_sidelengths_data(side_length_groups, transformers)
@@ -96,23 +98,24 @@ def main(size: int) -> None:
 
         output_data: torch.Tensor = model(input_data)
         output_data = output_data.reshape(-1)
-        
-        energies = [
-            rescaler_output_to_energies(output.item(), side_length_group)
-            for (output, side_length_group) in zip(output_data, side_length_groups)
-        ]
 
-        print(energies)
+        predicted_energies = np.array(
+            [
+                rescaler_output_to_energies(output.item(), side_length_group)
+                for (output, side_length_group) in zip(output_data, side_length_groups)
+            ]
+        )
+
+    output_filename = f"test_and_predicted_energies_{SIZE_TO_LABEL[size]}.dat"
+    output_dirpath = Path(".", "test_and_predicted_energies")
+    output_filepath = output_dirpath / output_filename
+
+    output_data = np.vstack((test_energies, predicted_energies))
+    output_data = np.transpose(output_data)
+
+    np.savetxt(output_filepath, output_data)
 
 
 if __name__ == "__main__":
-    size = 64
+    size = 8
     main(size)
-
-# PLAN
-# - load the test data
-#   - get the side lengths and energies
-# - load the models (.pth files)
-# - load the feature transformers, convert to proper data types
-#   - get the energies
-#   - save the side lengths and predicted energies together in a single file
