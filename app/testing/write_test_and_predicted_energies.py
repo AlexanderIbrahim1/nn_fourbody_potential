@@ -71,8 +71,8 @@ def load_model(size: int) -> RegressionMultilayerPerceptron:
     model = RegressionMultilayerPerceptron(n_features, n_outputs, layers)
 
     filepath = model_filepath(size)
-    checkpoint = torch.load(filepath)
-    model.load_state_dict(checkpoint["model_state_dict"])
+    model_state_dict = torch.load(filepath)
+    model.load_state_dict(model_state_dict)
 
     return model
 
@@ -112,10 +112,10 @@ def main(size: int) -> None:
 
     output_data = np.vstack((test_energies, predicted_energies))
     output_data = np.transpose(output_data)
-
+    
     np.savetxt(output_filepath, output_data)
 
 
 if __name__ == "__main__":
-    size = 8
+    size = 64
     main(size)
