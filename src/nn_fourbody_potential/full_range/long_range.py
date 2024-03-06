@@ -20,11 +20,6 @@ from nn_fourbody_potential.utils import smooth_01_transition
 from nn_fourbody_potential.sidelength_distributions import SixSideLengths
 from nn_fourbody_potential.sidelength_distributions import FourCartesianPoints
 
-# TODO:
-# - replace attenuation function with the _01 transition
-#    - the actual potential doesn't need to match the properties of the toy potential
-#    - don't need the SG attenuation function
-
 
 class LongRangeEnergyCorrector:
     def __init__(
