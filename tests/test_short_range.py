@@ -33,12 +33,16 @@ class Test_prepare_extrapolation_data:
     def test_raises_nonpositive_scaling_step(self, invalid_scaling_step: float) -> None:
         arb_sample = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
         with pytest.raises(ValueError):
-            prepare_short_range_extrapolation_data(arb_sample, invalid_scaling_step, short_range_cutoff=SHORT_RANGE_DISTANCE_CUTOFF)
+            prepare_short_range_extrapolation_data(
+                arb_sample, invalid_scaling_step, short_range_cutoff=SHORT_RANGE_DISTANCE_CUTOFF, flag_skip_checks=False
+            )
 
     def test_raises_sidelengths_to_large(self) -> None:
         too_large_sample = tuple([SHORT_RANGE_DISTANCE_CUTOFF * 1.05] * 6)
         with pytest.raises(ValueError):
-            prepare_short_range_extrapolation_data(too_large_sample, SHORT_RANGE_SCALING_STEP, SHORT_RANGE_DISTANCE_CUTOFF)
+            prepare_short_range_extrapolation_data(
+                too_large_sample, SHORT_RANGE_SCALING_STEP, SHORT_RANGE_DISTANCE_CUTOFF, flag_skip_checks=False
+            )
 
     @pytest.mark.parametrize("invalid_sidelength", [0.0, -0.05])
     def test_raises_nonpositive_sidelength(self, invalid_sidelength: float) -> None:
@@ -48,6 +52,7 @@ class Test_prepare_extrapolation_data:
                 sample_with_invalid_sidelength,
                 SHORT_RANGE_SCALING_STEP,
                 SHORT_RANGE_DISTANCE_CUTOFF,
+                flag_skip_checks=False,
             )
 
 
