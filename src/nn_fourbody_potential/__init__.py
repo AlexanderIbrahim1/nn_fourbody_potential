@@ -1,0 +1,1 @@
+from nn_fourbody_potential._published_model import load_potential

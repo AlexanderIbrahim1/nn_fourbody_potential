@@ -62,10 +62,10 @@ def _published_output_to_energy_rescaler() -> rescaling.ReverseEnergyRescaler:
     return rescaler_output_to_energies
 
 
-def _published_load_model_weights(size: str, model_filepath: Path) -> RegressionMultilayerPerceptron:
+def _published_load_model_weights(size_label: str, model_filepath: Path) -> RegressionMultilayerPerceptron:
     n_features = 6
     n_outputs = 1
-    layers = _SIZE_TO_LAYERS[size]
+    layers = _SIZE_TO_LAYERS[size_label]
     model = RegressionMultilayerPerceptron(n_features, n_outputs, layers)
 
     model_state_dict = torch.load(model_filepath)
@@ -74,53 +74,48 @@ def _published_load_model_weights(size: str, model_filepath: Path) -> Regression
     return model
 
 
-def load_model(size: str, model_filepath: Path) -> ExtrapolatedPotential:
+def load_potential(size_label: str, model_filepath: Path) -> ExtrapolatedPotential:
     # TODO: add input sanitizing
     transformers = _published_feature_transformers()
-    model = _published_load_model_weights()
+    model = _published_load_model_weights(size_label, model_filepath)
     rescaler = _published_output_to_energy_rescaler()
-    potential = ExtrapolatedPotential(model, transformers)
+    return ExtrapolatedPotential(model, transformers, rescaler)
 
 
-def main(size: int) -> None:
-    test_filepath = FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH
-    side_length_groups, test_energies = load_fourbody_training_data(test_filepath)
-
-    model = _published_load_model(size)
-    transformers = _published_feature_transformers()
-
-    rescaling_function = _published_rescaling_function()
-    rescaling_limits_to_energies = rescaling.RescalingLimits(
-        from_left=-1.0, from_right=1.0, to_left=-3.2619903087615967, to_right=8.64592170715332
-    )
-    rescaler_output_to_energies = rescaling.ReverseEnergyRescaler(rescaling_function, rescaling_limits_to_energies)
-
-    input_data = transform_sidelengths_data(side_length_groups, transformers)
-    input_data = torch.from_numpy(input_data.astype(np.float32))
-
-    with torch.no_grad():
-        model.eval()
-
-        output_data: torch.Tensor = model(input_data)
-        output_data = output_data.reshape(-1)
-
-        predicted_energies = np.array(
-            [
-                rescaler_output_to_energies(output.item(), side_length_group)
-                for (output, side_length_group) in zip(output_data, side_length_groups)
-            ]
-        )
-
-    output_filename = f"test_and_predicted_energies_{SIZE_TO_LABEL[size]}.dat"
-    output_dirpath = Path(".", "test_and_predicted_energies")
-    output_filepath = output_dirpath / output_filename
-
-    output_data = np.vstack((test_energies, predicted_energies))
-    output_data = np.transpose(output_data)
-
-    np.savetxt(output_filepath, output_data)
-
-
-if __name__ == "__main__":
-    size = 64
-    main(size)
+# def main(size: int) -> None:
+#     test_filepath = FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH
+#     side_length_groups, test_energies = load_fourbody_training_data(test_filepath)
+#
+#     model = _published_load_model(size)
+#     transformers = _published_feature_transformers()
+#
+#     rescaling_function = _published_rescaling_function()
+#     rescaling_limits_to_energies = rescaling.RescalingLimits(
+#         from_left=-1.0, from_right=1.0, to_left=-3.2619903087615967, to_right=8.64592170715332
+#     )
+#     rescaler_output_to_energies = rescaling.ReverseEnergyRescaler(rescaling_function, rescaling_limits_to_energies)
+#
+#     input_data = transform_sidelengths_data(side_length_groups, transformers)
+#     input_data = torch.from_numpy(input_data.astype(np.float32))
+#
+#     with torch.no_grad():
+#         model.eval()
+#
+#         output_data: torch.Tensor = model(input_data)
+#         output_data = output_data.reshape(-1)
+#
+#         predicted_energies = np.array(
+#             [
+#                 rescaler_output_to_energies(output.item(), side_length_group)
+#                 for (output, side_length_group) in zip(output_data, side_length_groups)
+#             ]
+#         )
+#
+#     output_filename = f"test_and_predicted_energies_{SIZE_TO_LABEL[size]}.dat"
+#     output_dirpath = Path(".", "test_and_predicted_energies")
+#     output_filepath = output_dirpath / output_filename
+#
+#     output_data = np.vstack((test_energies, predicted_energies))
+#     output_data = np.transpose(output_data)
+#
+#     np.savetxt(output_filepath, output_data)

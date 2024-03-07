@@ -42,15 +42,14 @@ def short_range_energy_extrapolation(
 
 
 def prepare_short_range_extrapolation_data(
-    short_range_sample: SixSideLengths,
-    scaling_step: float,
-    short_range_cutoff: float,
+    short_range_sample: SixSideLengths, scaling_step: float, short_range_cutoff: float, *, flag_skip_checks: bool = True
 ) -> Tuple[ExtrapolationSideLengths, ExtrapolationDistanceInfo]:
     sidelength_shortest = min(short_range_sample)
 
-    _check_positive_scaling_step(scaling_step)
-    _check_shortest_side_length_is_short_enough(sidelength_shortest, short_range_cutoff)
-    _check_shortest_side_length_is_positive(sidelength_shortest)
+    if not flag_skip_checks:
+        _check_positive_scaling_step(scaling_step)
+        _check_shortest_side_length_is_short_enough(sidelength_shortest, short_range_cutoff)
+        _check_shortest_side_length_is_positive(sidelength_shortest)
 
     sidelength_lower = short_range_cutoff
     sidelength_upper = short_range_cutoff + scaling_step

@@ -87,7 +87,7 @@ class ReservedDeque:
         self._i_iter = self._i_elem_start
         return self
 
-    def __next__(self) -> T:
+    def __next__(self) -> Any:
         if self._i_iter >= self._i_elem_end:
             raise StopIteration
 

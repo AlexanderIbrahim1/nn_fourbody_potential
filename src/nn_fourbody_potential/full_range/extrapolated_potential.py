@@ -13,7 +13,6 @@ from typing import Sequence
 from typing import Tuple
 
 import numpy as np
-from numpy.typing import NDArray
 import torch
 
 from nn_fourbody_potential.full_range.constants import SHORT_RANGE_DISTANCE_CUTOFF
@@ -29,7 +28,6 @@ from nn_fourbody_potential.full_range.short_range_extrapolation_types import Ext
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExtrapolationEnergies
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.reserved_deque2 import ReservedDeque
-from nn_fourbody_potential.sidelength_distributions import SixSideLengths
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations import transform_sidelengths_data
 from nn_fourbody_potential import rescaling
@@ -54,7 +52,7 @@ class ExtrapolatedPotential:
         # TODO: perform a check on the shape of the input
 
         # reason for ignore: function takes any element of six floating-point numbers
-        interaction_ranges = [classify_interaction_range(sample) for sample in input_sidelengths]  # type: ignore
+        interaction_ranges = [classify_interaction_range(sample.tolist()) for sample in input_sidelengths]  # type: ignore
 
         batch_sidelengths, distance_infos = self._batch_from_interaction_ranges(input_sidelengths, interaction_ranges)
         batch_energies = self._calculate_batch_energies(batch_sidelengths)
@@ -74,9 +72,8 @@ class ExtrapolatedPotential:
             elif interact_range == InteractionRange.MIXED_MID_LONG_RANGE:
                 abinitio_energy: torch.Tensor = batch_energies.pop_front()
                 sidelengths = tuple([sl.item() for sl in sample])
-                extrapolated_energies[i_extrap] = self._lr_corrector.mixed_from_sidelengths(
-                    abinitio_energy.item(), sidelengths
-                )
+                energy = self._lr_corrector.mixed_from_sidelengths(abinitio_energy.item(), sidelengths)
+                extrapolated_energies[i_extrap] = energy
             elif interact_range == InteractionRange.LONG_RANGE:
                 extrapolated_energies[i_extrap] = self._lr_corrector.dispersion_from_sidelengths(sample)
             else:
@@ -96,8 +93,8 @@ class ExtrapolatedPotential:
         for sample, interact_range in zip(samples, interaction_ranges):
             if interact_range == InteractionRange.SHORT_RANGE:
                 extrap_sidelengths, extrap_dist_info = prepare_short_range_extrapolation_data(sample, step, cutoff)
-                batch_sidelengths.push_back(extrap_sidelengths.lower)
-                batch_sidelengths.push_back(extrap_sidelengths.upper)
+                batch_sidelengths.push_back(torch.tensor(extrap_sidelengths.lower))
+                batch_sidelengths.push_back(torch.tensor(extrap_sidelengths.upper))
                 distance_infos.push_back(extrap_dist_info)
             elif interact_range == InteractionRange.MID_RANGE:
                 batch_sidelengths.push_back(sample)
@@ -123,8 +120,8 @@ class ExtrapolatedPotential:
 
         for i in range(batch_sidelengths.size):
             output = output_data[i].item()
-            sidelengths = tuple([sl.item() for sl in batch_sidelengths[i]])
-            output_data[i] = self._output_to_energy_rescaler(output, sidelengths)
+            sidelengths: torch.Tensor = batch_sidelengths[i]
+            output_data[i] = self._output_to_energy_rescaler(output, sidelengths.tolist())
 
         return ReservedDeque.with_size(output_data)
 
@@ -134,7 +131,7 @@ def _preallocate_batch_sidelengths(interaction_ranges: Sequence[InteractionRange
     n_sidelengths = 6
     sidelengths_shape = (total_size_allocation, n_sidelengths)
 
-    return ReservedDeque.with_no_size(np.empty(sidelengths_shape, dtype=np.float32))
+    return ReservedDeque.with_no_size(torch.empty(sidelengths_shape, dtype=torch.float32))
 
 
 def _preallocate_distance_infos(interaction_ranges: Sequence[InteractionRange]) -> ReservedDeque:

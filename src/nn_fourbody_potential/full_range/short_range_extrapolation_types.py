@@ -2,11 +2,10 @@
 This module contains POD types that are used for short-range extrapolation.
 """
 
+import math
 from dataclasses import astuple
 from dataclasses import dataclass
 from functools import cached_property
-
-import numpy as np
 
 from nn_fourbody_potential.sidelength_distributions import SixSideLengths
 
@@ -69,13 +68,13 @@ class ExponentialEnergyExtrapolator:
         abs_energies_lower_floor = max(abs_energies_floor, abs(energies_lower))
         abs_energies_upper_floor = max(abs_energies_floor, abs(energies_upper))
 
-        return -np.log(abs_energies_upper_floor / abs_energies_lower_floor) / self.distances.delta_r()
+        return -math.log(abs_energies_upper_floor / abs_energies_lower_floor) / self.distances.delta_r()
 
     @cached_property
     def energy(self) -> float:
         energies_lower = self.energies.lower
         dist_shift = self.distances.r_short_range - self.distances.r_lower
-        return energies_lower * np.exp(-self.slope * dist_shift)
+        return energies_lower * math.exp(-self.slope * dist_shift)
 
     @cached_property
     def is_magnitude_increasing_with_distance(self) -> float:
