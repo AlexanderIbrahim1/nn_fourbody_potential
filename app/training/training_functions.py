@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader
 from nn_fourbody_potential.dataset import PotentialDataset
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.models import TrainingParameters
-import nn_fourbody_potential.modelio as modelio
 
+import training_io
 import training_state
 import training_utils
 
@@ -57,13 +57,13 @@ def train_model(
     save_every: int,
     continue_training_from_epoch: Optional[int] = None,
 ) -> None:
-    saved_models_dirpath = modelio.get_saved_models_dirpath(params, Path.cwd())
+    saved_models_dirpath = training_io.get_saved_models_dirpath(params, Path.cwd())
 
     # fmt: off
     error_file_mode = get_error_file_mode(continue_training_from_epoch)
-    training_error_writer = modelio.ErrorWriter(modelpath, "training_error_vs_epoch.dat", mode=error_file_mode)
-    training_nohcp_error_writer = modelio.ErrorWriter(modelpath, "training_nohcp_error_vs_epoch.dat", mode=error_file_mode)
-    validation_error_writer = modelio.ErrorWriter(modelpath, "validation_error_vs_epoch.dat", mode=error_file_mode)
+    training_error_writer = training_utils.ErrorWriter(modelpath, "training_error_vs_epoch.dat", error_file_mode)
+    training_nohcp_error_writer = training_utils.ErrorWriter(modelpath, "training_nohcp_error_vs_epoch.dat", error_file_mode)
+    validation_error_writer = training_utils.ErrorWriter(modelpath, "validation_error_vs_epoch.dat", error_file_mode)
     # fmt: on
 
     training_loss_accumulator = training_utils.TrainingLossAccumulator()

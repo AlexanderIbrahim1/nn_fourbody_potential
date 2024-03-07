@@ -25,16 +25,16 @@ from nn_fourbody_potential.transformations import MinimumPermutationTransformer
 from nn_fourbody_potential.transformations import StandardizeTransformer
 from nn_fourbody_potential import rescaling
 
-import nn_fourbody_potential.modelio as modelio
-
 from nn_fourbody_potential_data.data_paths import FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH
 from nn_fourbody_potential_data.data_paths import FILTERED_SPLIT_ABINITIO_TRAIN_DATA_DIRPATH
 from nn_fourbody_potential_data.data_paths import FILTERED_SPLIT_ABINITIO_TRAIN_NOHCP_DATA_DIRPATH
 from nn_fourbody_potential_data.data_paths import FILTERED_SPLIT_ABINITIO_VALID_DATA_DIRPATH
 
+import training_io
 import training_functions
 from training_utils import N_FEATURES
 from training_utils import N_OUTPUTS
+
 
 class MSLELoss(torch.nn.Module):
     def __init__(self):
@@ -65,7 +65,7 @@ def get_training_parameters(
         layers=[64, 128, 128, 64],
         learning_rate=2.0e-4,
         weight_decay=0.0,
-        training_size=modelio.number_of_lines(data_filepath),
+        training_size=training_io.number_of_lines(data_filepath),
         total_epochs=20000,
         batch_size=64,
         transformations=data_transforms,
@@ -74,7 +74,7 @@ def get_training_parameters(
     )
 
 
-def get_toy_decay_potential() -> rescaling.RescalingPotential:
+def get_rescaling_function() -> rescaling.RescalingPotential:
     # constants chosen so that the ratio of the absolute values of the minimum and maximum reduced
     # energies is the lowest possible
     coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0
@@ -91,7 +91,7 @@ def train_fourbody_model() -> None:
     validation_data_filepath = FILTERED_SPLIT_ABINITIO_VALID_DATA_DIRPATH
     other_info = "_rescaling_msle_model_large0"
 
-    rescaling_potential = get_toy_decay_potential()
+    rescaling_potential = get_rescaling_function()
     transforms = get_data_transforms_flattening()
 
     params = get_training_parameters(training_data_filepath, transforms, other_info)
@@ -124,14 +124,14 @@ def train_fourbody_model() -> None:
     y_valid = y_valid.to(device)
     model = model.to(device)
 
-    modelpath = modelio.get_path_to_model(params, Path.cwd())
+    modelpath = training_io.get_path_to_model(params, Path.cwd())
     if not modelpath.exists():
         modelpath.mkdir()
 
-    if not (params_filepath := modelio.get_training_parameters_filepath(params, Path.cwd())).exists():
-        modelio.write_training_parameters(params_filepath, params, overwrite=False)
+    if not (params_filepath := training_io.get_training_parameters_filepath(params, Path.cwd())).exists():
+        training_io.write_training_parameters(params_filepath, params, overwrite=False)
 
-    saved_models_dirpath = modelio.get_saved_models_dirpath(params, Path.cwd())
+    saved_models_dirpath = training_io.get_saved_models_dirpath(params, Path.cwd())
 
     optimizer = torch.optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=25, gamma=0.99)
@@ -155,7 +155,7 @@ def train_fourbody_model() -> None:
         # continue_training_from_epoch=15200,
     )
 
-    last_model_filename = modelio.get_model_filename(saved_models_dirpath, params.total_epochs - 1)
+    last_model_filename = training_io.get_model_filename(saved_models_dirpath, params.total_epochs - 1)
     test_loss = training_functions.test_model(x_test, y_test, model, last_model_filename)
     print(f"test loss mse  = {test_loss}")
     print(f"test loss rmse = {np.sqrt(test_loss)}")
