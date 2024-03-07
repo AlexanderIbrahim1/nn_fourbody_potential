@@ -6,7 +6,6 @@ from typing import Optional
 import torch
 from torch.utils.data import DataLoader
 
-from nn_fourbody_potential.dataset import PotentialDataset
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.models import TrainingParameters
 
@@ -68,7 +67,7 @@ def train_model(
 
     training_loss_accumulator = training_utils.TrainingLossAccumulator()
 
-    trainset = PotentialDataset(x_train, y_train)
+    trainset = training_utils.PotentialDataset(x_train, y_train)
     trainloader = DataLoader(trainset, batch_size=params.batch_size, num_workers=0, shuffle=True)
 
     state_data = training_state.TrainingStateData(model_, optimizer_, scheduler_, 0)

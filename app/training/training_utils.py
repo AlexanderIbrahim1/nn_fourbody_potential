@@ -6,6 +6,7 @@ from typing import Sequence
 import numpy as np
 from numpy.typing import NDArray
 import torch
+from torch.utils.data import Dataset
 
 from nn_fourbody_potential.dataio import load_fourbody_training_data
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
@@ -112,3 +113,22 @@ class ErrorWriter:
     def append(self, epoch: int, error: float) -> None:
         with open(self._savefile, "a") as fout:
             fout.write(f"{epoch: >7d} : {error: .14e}\n")
+
+
+class PotentialDataset(Dataset):
+    """
+    Prepare the dataset of the mapping of a multidimensional feature space to a
+    single output dimension.
+    """
+
+    def __init__(self, x, y) -> None:
+        self.x = x
+        self.y = y
+
+    def __len__(self) -> int:
+        return len(self.x)
+
+    def __getitem__(self, index):
+        x_output = self.x[index]
+        y_output = self.y[index]
+        return x_output, y_output
