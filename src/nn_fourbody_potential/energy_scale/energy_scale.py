@@ -1,7 +1,7 @@
 import enum
 from dataclasses import dataclass
 
-from nn_fourbody_potential.utils import smooth_01_transition
+from nn_fourbody_potential.full_range.utils import smooth_01_transition
 
 
 class EnergyScale(enum.Enum):
