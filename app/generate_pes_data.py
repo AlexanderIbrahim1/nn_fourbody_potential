@@ -17,16 +17,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from cartesian import CartesianND
-from cartesian.operations import relative_pair_distances
 from hydro4b_coords.geometries import MAP_GEOMETRY_TAG_TO_FUNCTION
 from hydro4b_coords.generate.generate import sample_fourbody_geometry
 
 from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON
 from nn_fourbody_potential.dataio import save_fourbody_sidelengths
-from nn_fourbody_potential.fourbody_potential import FourBodyAnalyticPotential
 from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
 from nn_fourbody_potential.sidelength_distributions import get_sidelengths
-from nn_fourbody_potential.sidelength_distributions import SixSideLengths
 
 FourCartesianPoints = Annotated[Sequence[CartesianND], 4]
 
@@ -44,16 +41,6 @@ def generate_hcp_points() -> Sequence[FourCartesianPoints]:
         groups_of_points.extend([point_creating_function(lc) for lc in lattice_constants])
 
     return groups_of_points
-
-
-def generate_hcp_pes_data(
-    potential: FourBodyAnalyticPotential,
-) -> Tuple[Sequence[SixSideLengths], Sequence[float]]:
-    groups_of_points = generate_hcp_points()
-    sidelengths = np.array([relative_pair_distances(points) for points in groups_of_points])
-    energies = np.array([potential(points) for points in groups_of_points])
-
-    return sidelengths, energies
 
 
 def main() -> None:
