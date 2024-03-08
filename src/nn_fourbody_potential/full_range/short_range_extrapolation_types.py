@@ -7,7 +7,7 @@ from dataclasses import astuple
 from dataclasses import dataclass
 from functools import cached_property
 
-from nn_fourbody_potential.sidelength_distributions import SixSideLengths
+from nn_fourbody_potential.common_types import SixSideLengths
 
 
 @dataclass

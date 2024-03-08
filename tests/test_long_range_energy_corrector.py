@@ -3,9 +3,6 @@ import pytest
 from cartesian import Cartesian3D
 from cartesian.operations import relative_pair_distances
 
-from dispersion4b.coefficients import c12_parahydrogen_midzuno_kihara
-from dispersion4b.potential import FourBodyDispersionPotential
-
 from nn_fourbody_potential.full_range.long_range import LongRangeEnergyCorrector
 
 

@@ -8,7 +8,7 @@ from nn_fourbody_potential.rescaling.rescaling_limits import RescalingLimits
 from nn_fourbody_potential.rescaling.rescaling_limits import LinearMap
 from nn_fourbody_potential.rescaling.rescaling_potential import RescalingPotential
 
-from nn_fourbody_potential.sidelength_distributions import SixSideLengths
+from nn_fourbody_potential.common_types import SixSideLengths
 
 
 class ReverseEnergyRescaler:

@@ -17,8 +17,8 @@ from hydro4b_coords.generate.generate import six_side_lengths_to_cartesian
 from nn_fourbody_potential.full_range.constants import END_LONG_RANGE_CUTOFF
 from nn_fourbody_potential.full_range.constants import START_LONG_RANGE_CUTOFF
 from nn_fourbody_potential.full_range.utils import smooth_01_transition
-from nn_fourbody_potential.sidelength_distributions import SixSideLengths
-from nn_fourbody_potential.sidelength_distributions import FourCartesianPoints
+from nn_fourbody_potential.common_types import SixSideLengths
+from nn_fourbody_potential.common_types import FourCartesianPoints
 
 
 class LongRangeEnergyCorrector:

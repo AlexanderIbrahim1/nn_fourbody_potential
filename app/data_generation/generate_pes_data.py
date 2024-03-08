@@ -20,7 +20,7 @@ from hydro4b_coords.generate.distributions import exponential_decay_distribution
 from hydro4b_coords.generate.generate import sample_fourbody_geometry
 
 from nn_fourbody_potential.dataio import save_fourbody_sidelengths
-from nn_fourbody_potential.sidelength_distributions import FourCartesianPoints
+from nn_fourbody_potential.common_types import FourCartesianPoints
 from nn_fourbody_potential import constants
 
 

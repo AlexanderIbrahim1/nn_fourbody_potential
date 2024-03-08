@@ -2,8 +2,11 @@
 The ReservedDeque class allows one to create an empty numpy array, and push elements
 back into its 0th dimension.
 
-This is similar to how in C++, one can create a `std::vector`, call `reserve()`, then
-call `push_back()` without having to reallocate memory.
+Some operations in this project require accessing elements from the either end, and shifting
+the index after each access. This data structure takes care of the boilerplate.
+
+The size of the underlying sequence isn't modified as elements are pushed on or popped off;
+indices within are shifted to account for this size change.
 """
 
 from typing import Any

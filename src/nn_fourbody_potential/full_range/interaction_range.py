@@ -11,7 +11,7 @@ import statistics
 
 import enum
 
-from nn_fourbody_potential.sidelength_distributions import SixSideLengths
+from nn_fourbody_potential.common_types import SixSideLengths
 from nn_fourbody_potential.full_range.constants import SHORT_RANGE_DISTANCE_CUTOFF
 from nn_fourbody_potential.full_range.constants import START_LONG_RANGE_CUTOFF
 from nn_fourbody_potential.full_range.constants import END_LONG_RANGE_CUTOFF

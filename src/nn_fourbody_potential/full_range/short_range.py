@@ -7,7 +7,7 @@ from nn_fourbody_potential.full_range.short_range_extrapolation_types import Lin
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExponentialEnergyExtrapolator
 from nn_fourbody_potential.full_range.utils import smooth_01_transition
 from nn_fourbody_potential.full_range.utils import is_different_sign
-from nn_fourbody_potential.sidelength_distributions import SixSideLengths
+from nn_fourbody_potential.common_types import SixSideLengths
 
 
 def short_range_energy_extrapolation(
