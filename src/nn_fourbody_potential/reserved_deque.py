@@ -7,63 +7,39 @@ call `push_back()` without having to reallocate memory.
 """
 
 from typing import Any
-from typing import Generic
 from typing import Iterator
-from typing import Optional
 from typing import Sequence
-from typing import TypeVar
 from typing import Union
 
-import numpy as np
 
-
-T = TypeVar("T")
-
-
-# TODO: add method to "reset" the ReservedVector without having to actually clear out the elements;
-#       the "effective size" of the vector is determined by `self._i_elem_start` and `self._i_elem_end`,
-#       and as long as the total size remains the same, we can "reset" the vector just be setting both
-#       of those values to 0
-
-
-class ReservedDeque(Generic[T]):
-    def __init__(
-        self, elements: np.ndarray[T], i_elem_start: Optional[int] = None, i_elem_end: Optional[int] = None
-    ) -> None:
+class ReservedDeque:
+    def __init__(self, elements: Sequence[Any], i_elem_start: int, i_elem_end: int) -> None:
         self._elements = elements
-
-        if i_elem_start is None:
-            self._i_elem_start = 0
-        else:
-            self._i_elem_start = i_elem_start
-
-        if i_elem_end is None:
-            self._i_elem_end = elements.shape[0]
-        else:
-            self._i_elem_end = i_elem_end
-
-        if self._i_elem_start < 0:
-            raise ValueError("The starting index must be 0 or greater.")
-
-        if self._i_elem_start > elements.shape[0]:
-            raise ValueError("The ending index cannot exceed the length of the underlying numpy array.")
+        self._max_size = len(self._elements)
+        self._i_elem_start = i_elem_start
+        self._i_elem_end = i_elem_end
 
     @classmethod
-    def new(cls, shape: Union[int, Sequence[int]], type_t: T) -> "ReservedDeque[T]":
-        """
-        NOTE: I cannot set `dtype=T` for the numpy array because it will throw an error such as
-            `TypeError: Cannot interpret '~T' as a data type`
-        This is why the `type_t` variable must be redundantly passed into the constructor
-        """
-        i_elem_start = 0
-        i_elem_end = 0
-        return cls(np.empty(shape, dtype=type_t), i_elem_start, i_elem_end)
+    def with_no_size(cls, elements: Union[Sequence[Any], int]) -> "ReservedDeque":
+        return cls._call_ctr(elements, set_size_to_zero=True)
 
     @classmethod
-    def from_array(cls, elements: np.ndarray[T]) -> "ReservedDeque[T]":
-        i_elem_start = 0
-        i_elem_end = len(elements)
-        return cls(elements, i_elem_start, i_elem_end)
+    def with_size(cls, elements: Union[Sequence[Any], int]) -> "ReservedDeque":
+        return cls._call_ctr(elements, set_size_to_zero=False)
+
+    @classmethod
+    def _call_ctr(cls, elements: Union[Sequence[Any], int], *, set_size_to_zero: bool) -> "ReservedDeque":
+        if isinstance(elements, int):
+            _elements = [None for _ in range(elements)]
+        else:
+            _elements = elements
+
+        if set_size_to_zero:
+            _size = 0
+        else:
+            _size = len(_elements)
+
+        return cls(_elements, 0, _size)
 
     def reset(self) -> None:
         """
@@ -78,14 +54,14 @@ class ReservedDeque(Generic[T]):
         self._i_elem_start = 0
         self._i_elem_end = 0
 
-    def push_back(self, elem: T) -> None:
-        if self._i_elem_end >= self._elements.size:
+    def push_back(self, elem: Any) -> None:
+        if self._i_elem_end >= self._max_size:
             raise IndexError("Cannot push an element to the end beyond the reserved range.")
 
         self._elements[self._i_elem_end] = elem
         self._i_elem_end += 1
 
-    def pop_back(self) -> T:
+    def pop_back(self) -> Any:
         if self._i_elem_end == self._i_elem_start:
             raise IndexError("Cannot pop the element off the end; there are no elements.")
 
@@ -94,14 +70,14 @@ class ReservedDeque(Generic[T]):
 
         return ret_value
 
-    def push_front(self, elem: T) -> None:
+    def push_front(self, elem: Any) -> None:
         if self._i_elem_start == 0:
             raise IndexError("Cannot push an element to the start beyond the reserved range.")
 
         self._i_elem_start -= 1
         self._elements[self._i_elem_start] = elem
 
-    def pop_front(self) -> T:
+    def pop_front(self) -> Any:
         if self._i_elem_start == self._i_elem_end:
             raise IndexError("Cannot pop the element off the start; there are no elements.")
 
@@ -111,12 +87,12 @@ class ReservedDeque(Generic[T]):
         return ret_value
 
     @property
-    def elements(self) -> np.ndarray[T]:
+    def elements(self) -> Sequence[Any]:
         return self._elements[self._i_elem_start : self._i_elem_end]
 
     @property
     def max_size(self) -> int:
-        return self._elements.size
+        return self._max_size
 
     @property
     def size(self) -> int:
@@ -126,7 +102,7 @@ class ReservedDeque(Generic[T]):
         self._i_iter = self._i_elem_start
         return self
 
-    def __next__(self) -> T:
+    def __next__(self) -> Any:
         if self._i_iter >= self._i_elem_end:
             raise StopIteration
 
@@ -142,14 +118,13 @@ class ReservedDeque(Generic[T]):
             return NotImplemented
 
         return (
-            self.max_size == other.max_size
-            and self.size == other.size
+            self._max_size == other._max_size
             and self._i_elem_start == other._i_elem_start
             and self._i_elem_end == other._i_elem_end
             and all([self_val == other_val for (self_val, other_val) in zip(self, other)])
         )
 
-    def __getitem__(self, index: int) -> T:
+    def __getitem__(self, index: int) -> Any:
         if not self._i_elem_start <= index < self._i_elem_end:
             raise IndexError(
                 "Element access is out of bounds. Must be `lower index` <= index < `upper index`\n"
