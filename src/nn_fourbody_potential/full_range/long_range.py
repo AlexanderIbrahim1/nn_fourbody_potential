@@ -4,10 +4,9 @@ potential energy. The long-range energies converge to the Bade potential.
 """
 
 import statistics
-from itertools import combinations
 from typing import Optional
 
-from cartesian.measure import distance
+from cartesian.operations import relative_pair_distances
 
 from dispersion4b.coefficients import b12_parahydrogen_avtz_approx
 from dispersion4b.quadruplet_potential import QuadrupletDispersionPotential
@@ -61,7 +60,7 @@ class LongRangeEnergyCorrector:
         Apply the long-range energy corrections, using the four points in 3D Cartesian space of the
         four-body geometry to calculate the dispersion interaction energy.
         """
-        sidelengths = [distance(p0, p1) for (p0, p1) in combinations(four_points, 2)]
+        sidelengths = relative_pair_distances(four_points)
         average_sidelength = statistics.mean(sidelengths)
         return self._mixed(abinitio_energy, four_points, average_sidelength)
 

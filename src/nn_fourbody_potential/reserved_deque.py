@@ -11,27 +11,28 @@ indices within are shifted to account for this size change.
 
 from typing import Any
 from typing import Iterator
+from typing import MutableSequence
 from typing import Sequence
 from typing import Union
 
 
 class ReservedDeque:
-    def __init__(self, elements: Sequence[Any], i_elem_start: int, i_elem_end: int) -> None:
+    def __init__(self, elements: MutableSequence[Any], i_elem_start: int, i_elem_end: int) -> None:
         self._elements = elements
         self._max_size = len(self._elements)
         self._i_elem_start = i_elem_start
         self._i_elem_end = i_elem_end
 
     @classmethod
-    def with_no_size(cls, elements: Union[Sequence[Any], int]) -> "ReservedDeque":
+    def with_no_size(cls, elements: Union[MutableSequence[Any], int]) -> "ReservedDeque":
         return cls._call_ctr(elements, set_size_to_zero=True)
 
     @classmethod
-    def with_size(cls, elements: Union[Sequence[Any], int]) -> "ReservedDeque":
+    def with_size(cls, elements: Union[MutableSequence[Any], int]) -> "ReservedDeque":
         return cls._call_ctr(elements, set_size_to_zero=False)
 
     @classmethod
-    def _call_ctr(cls, elements: Union[Sequence[Any], int], *, set_size_to_zero: bool) -> "ReservedDeque":
+    def _call_ctr(cls, elements: Union[MutableSequence[Any], int], *, set_size_to_zero: bool) -> "ReservedDeque":
         if isinstance(elements, int):
             _elements = [None for _ in range(elements)]
         else:
@@ -91,7 +92,7 @@ class ReservedDeque:
 
     @property
     def elements(self) -> Sequence[Any]:
-        return self._elements[self._i_elem_start : self._i_elem_end]
+        return self._elements[self._i_elem_start : self._i_elem_end]  # noqa
 
     @property
     def max_size(self) -> int:

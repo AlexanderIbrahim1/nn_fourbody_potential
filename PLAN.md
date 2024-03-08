@@ -145,3 +145,4 @@ Nearly done!
 - [DONE] simplify the `sidelength_distributions` subpackage
 - maybe move stuff from cartesian and hydro4b_coords and dispersion4b into this repo?
   - so the users don't have to go looking for it
+- fix pyright complaints
