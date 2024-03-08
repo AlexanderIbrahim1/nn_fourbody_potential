@@ -9,23 +9,44 @@ and the corresponding energy value.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated
 from typing import Sequence
-from typing import Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 
-from cartesian import CartesianND
+from cartesian.operations import relative_pair_distances
 from hydro4b_coords.geometries import MAP_GEOMETRY_TAG_TO_FUNCTION
+from hydro4b_coords.generate.discretized_distribution import DiscretizedDistribution
+from hydro4b_coords.generate.distributions import exponential_decay_distribution
 from hydro4b_coords.generate.generate import sample_fourbody_geometry
 
-from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON
 from nn_fourbody_potential.dataio import save_fourbody_sidelengths
-from nn_fourbody_potential.sidelength_distributions import get_abinit_tetrahedron_distribution
-from nn_fourbody_potential.sidelength_distributions import get_sidelengths
+from nn_fourbody_potential.sidelength_distributions import FourCartesianPoints
+from nn_fourbody_potential import constants
 
-FourCartesianPoints = Annotated[Sequence[CartesianND], 4]
+
+def get_abinit_tetrahedron_distribution(
+    x_min: float,
+    x_max: float,
+    *,
+    coeff: float = constants.ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF,
+    decay_rate: float = constants.ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON,
+) -> DiscretizedDistribution:
+    """
+    The 'ab initio tetrahedron distribution' is a probability distribution for the sidelengths
+    of four-body geometries.
+
+    The probability distribution for the sidelengths is an exponential decay, and matches the
+    decay rate of the ab initio four-body parahydrogen interaction energies of the tetrahedron.
+    """
+    distrib = exponential_decay_distribution(
+        n_terms=1024,
+        x_min=x_min,
+        x_max=x_max,
+        coeff=coeff,
+        decay_rate=decay_rate,
+    )
+
+    return distrib
 
 
 def generate_hcp_points() -> Sequence[FourCartesianPoints]:
@@ -45,11 +66,11 @@ def generate_hcp_points() -> Sequence[FourCartesianPoints]:
 
 def main() -> None:
     n_samples = 300
-    decay_rate = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON
+    decay_rate = constants.ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON
     distrib = get_abinit_tetrahedron_distribution(1.5, 6.0, decay_rate=decay_rate)
 
     dist_points = [sample_fourbody_geometry(distrib) for _ in range(n_samples)]
-    dist_sidelengths = np.array([get_sidelengths(pts) for pts in dist_points])
+    dist_sidelengths = np.array([relative_pair_distances(pts) for pts in dist_points])
 
     # dist_sidelengths = np.array([get_sidelengths(pts) for pts in dist_points]).reshape(-1)
 

@@ -139,7 +139,7 @@ In each "scripts" directory, there should be some `script_info.py` with info for
 ## 2024-03-07
 Nearly done!
 - clean up the repo some more
-- remove the duplicated reserved_deque for the only that can actually hold a tensor
+- [DONE] remove the duplicated reserved_deque for the only that can actually hold a tensor
 - maybe move a lot of the training files into the src/ tree?
-- maybe remove the `energy_scale` subpackage entirely?
+- [DONE] maybe remove the `energy_scale` subpackage entirely?
 - simplify the `sidelength_distributions` subpackage
