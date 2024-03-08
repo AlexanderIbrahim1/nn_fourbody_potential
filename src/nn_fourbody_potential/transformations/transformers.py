@@ -19,9 +19,9 @@ from typing import Tuple
 from hydro4b_coords.sidelength_swap import LessThanEpsilon
 from hydro4b_coords.sidelength_swap import minimum_permutation
 
-TransformedSideLengths = Tuple[float, float, float, float, float, float]
-SixSideLengths = Tuple[float, float, float, float, float, float]
-SixSideLengthsComparator = Callable[[SixSideLengths, SixSideLengths], bool]
+from nn_fourbody_potential.common_types import SixSideLengths
+from nn_fourbody_potential.common_types import SixSideLengthsComparator
+from nn_fourbody_potential.common_types import TransformedSideLengths
 
 
 class SixSideLengthsTransformer(ABC):

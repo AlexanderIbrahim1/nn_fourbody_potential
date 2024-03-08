@@ -12,8 +12,8 @@ import numpy as np
 from numpy.typing import NDArray
 
 from nn_fourbody_potential.transformations.transformers import SixSideLengthsTransformer
-from nn_fourbody_potential.transformations.transformers import SixSideLengths
-from nn_fourbody_potential.transformations.transformers import TransformedSideLengths
+from nn_fourbody_potential.common_types import SixSideLengths
+from nn_fourbody_potential.common_types import TransformedSideLengths
 
 
 def transform_sidelengths_data(
