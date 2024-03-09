@@ -56,10 +56,10 @@ class Cartesian3D:
         return self.__mul__(other)
 
     def __floordiv__(self, other: float) -> Cartesian3D:
-        return Cartesian3D(self.x // other.x, self.y // other.y, self.z // other.z)
+        return Cartesian3D(self.x // other, self.y // other, self.z // other)
 
     def __truediv__(self, other: float) -> Cartesian3D:
-        return Cartesian3D(self.x / other.x, self.y / other.y, self.z / other.z)
+        return Cartesian3D(self.x / other, self.y / other, self.z / other)
 
     def _coords(self) -> tuple[float]:
         return (self.x, self.y, self.z)

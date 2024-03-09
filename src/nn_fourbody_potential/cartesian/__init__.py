@@ -9,3 +9,4 @@ from nn_fourbody_potential.cartesian.operations import linear_combination
 from nn_fourbody_potential.cartesian.operations import approx_eq
 from nn_fourbody_potential.cartesian.operations import centroid
 from nn_fourbody_potential.cartesian.operations import relative_pair_distances
+from nn_fourbody_potential.cartesian.operations import six_side_lengths_to_cartesian

@@ -8,29 +8,26 @@ This includes:
 
 from __future__ import annotations
 
+import abc
+import dataclasses
 import math
-from abc import ABC
-from abc import abstractmethod
-from dataclasses import dataclass
-from dataclasses import field
 from typing import Callable
-from typing import Tuple
-
-from hydro4b_coords.sidelength_swap import LessThanEpsilon
-from hydro4b_coords.sidelength_swap import minimum_permutation
 
 from nn_fourbody_potential.common_types import SixSideLengths
 from nn_fourbody_potential.common_types import SixSideLengthsComparator
 from nn_fourbody_potential.common_types import TransformedSideLengths
 
+from nn_fourbody_potential.transformations._permutations import minimum_permutation
+from nn_fourbody_potential.transformations._comparison import LessThanEpsilon
 
-class SixSideLengthsTransformer(ABC):
-    @abstractmethod
+
+class SixSideLengthsTransformer(abc.ABC):
+    @abc.abstractmethod
     def __call__(self, sidelens: SixSideLengths) -> TransformedSideLengths:
         """Transform the six side lengths in some way, to give another 6-tuple of floats."""
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class ReciprocalTransformer(SixSideLengthsTransformer):
     """Transform each side length distance 'r' into its reciprocal '1/r'"""
 
@@ -38,7 +35,7 @@ class ReciprocalTransformer(SixSideLengthsTransformer):
         return tuple([1.0 / r for r in sidelens])
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class ExponentialDecayTransformer(SixSideLengthsTransformer):
     """Transform each side length distance 'r' into exp(-r/alpha)"""
 
@@ -51,7 +48,7 @@ class ExponentialDecayTransformer(SixSideLengthsTransformer):
         return tuple([math.exp(-r / self.alpha) for r in sidelens])
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class MinimumPermutationTransformer(SixSideLengthsTransformer):
     """
     Choose the permutation of indices (constrained by the four-body geometry) such that
@@ -64,15 +61,15 @@ class MinimumPermutationTransformer(SixSideLengthsTransformer):
         return minimum_permutation(sidelens, self.less_than_comparator)
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class StandardizeTransformer(SixSideLengthsTransformer):
     """
     Map all six values linearly from [a, b] to [c, d].
     """
 
-    init_pair: Tuple[float, float]
-    final_pair: Tuple[float, float]
-    linear_func: Callable[[float], float] = field(init=False)
+    init_pair: tuple[float, float]
+    final_pair: tuple[float, float]
+    linear_func: Callable[[float], float] = dataclasses.field(init=False)
 
     def __post_init__(self) -> None:
         assert self.init_pair[0] < self.init_pair[1]
