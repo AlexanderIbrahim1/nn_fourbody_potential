@@ -11,9 +11,10 @@ from typing import Sequence
 import numpy as np
 from numpy.typing import NDArray
 
-from nn_fourbody_potential.transformations.transformers import SixSideLengthsTransformer
 from nn_fourbody_potential.common_types import SixSideLengths
 from nn_fourbody_potential.common_types import TransformedSideLengths
+
+from nn_fourbody_potential.transformations.transformers import SixSideLengthsTransformer
 
 
 def transform_sidelengths_data(

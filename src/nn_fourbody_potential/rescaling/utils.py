@@ -11,12 +11,12 @@ from nn_fourbody_potential.rescaling.forward_energy_rescaler import ForwardEnerg
 from nn_fourbody_potential.rescaling.rescaling_limits import invert_rescaling_limits
 from nn_fourbody_potential.rescaling.rescaling_limits import LinearMap
 from nn_fourbody_potential.rescaling.rescaling_limits import RescalingLimits
-from nn_fourbody_potential.rescaling.rescaling_potential import RescalingPotential
+from nn_fourbody_potential.rescaling.rescaling_function import RescalingFunction
 from nn_fourbody_potential.rescaling.reverse_energy_rescaler import ReverseEnergyRescaler
 
 
 def forward_and_reverse_energy_rescalers(
-    res_potential: RescalingPotential, forward_res_limits: RescalingLimits
+    res_potential: RescalingFunction, forward_res_limits: RescalingLimits
 ) -> tuple[ForwardEnergyRescaler, ReverseEnergyRescaler]:
     reverse_res_limits = invert_rescaling_limits(forward_res_limits)
 
@@ -50,7 +50,7 @@ def prepare_rescaled_data(
     _side_length_groups: NDArray,
     _energies: NDArray,
     transformers: Sequence[SixSideLengthsTransformer],
-    res_potential: RescalingPotential,
+    res_potential: RescalingFunction,
     target_rescaling_limits: tuple[float, float] = (-1.0, 1.0),
     *,
     omit_final_rescaling_step: bool = False,
@@ -92,7 +92,7 @@ def prepare_rescaled_data_with_rescaling_limits(
     _side_length_groups: NDArray,
     _energies: NDArray,
     transformers: Sequence[SixSideLengthsTransformer],
-    res_potential: RescalingPotential,
+    res_potential: RescalingFunction,
     forward_res_limits: RescalingLimits,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
@@ -125,7 +125,7 @@ def _forward_rescaling_limits(
 def _rescale_energies(
     side_length_groups: torch.Tensor,
     energies: torch.Tensor,
-    res_potential: RescalingPotential,
+    res_potential: RescalingFunction,
     *,
     omit_final_rescaling_step: bool = False,
 ) -> tuple[torch.Tensor, RescalingLimits]:

@@ -20,6 +20,8 @@ from pathlib import Path
 
 from nn_fourbody_potential.cartesian import Cartesian3D
 from nn_fourbody_potential.cartesian import relative_pair_distances
+from nn_fourbody_potential.constants import N_FEATURES
+from nn_fourbody_potential.constants import N_OUTPUTS
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations import ReciprocalTransformer
@@ -70,10 +72,8 @@ def main() -> None:
     # create the PyTorch model; the following parameters (input features, outputs, and the layer sizes)
     # are specific to the model that was trained;
     # so far, the weights have not been initialized
-    n_features = 6
-    n_outputs = 1
     layer_sizes = [64, 128, 128, 64]
-    model = RegressionMultilayerPerceptron(n_features, n_outputs, layer_sizes)
+    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, layer_sizes)
 
     # the path to the specific .pth file
     # 2999 corresponds to the very last batch

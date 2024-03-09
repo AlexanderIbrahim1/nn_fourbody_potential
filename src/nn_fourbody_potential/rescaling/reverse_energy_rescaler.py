@@ -6,7 +6,7 @@ to the actual ab initio energies.
 
 from nn_fourbody_potential.rescaling.rescaling_limits import RescalingLimits
 from nn_fourbody_potential.rescaling.rescaling_limits import LinearMap
-from nn_fourbody_potential.rescaling.rescaling_potential import RescalingPotential
+from nn_fourbody_potential.rescaling.rescaling_function import RescalingFunction
 
 from nn_fourbody_potential.common_types import SixSideLengths
 
@@ -14,7 +14,7 @@ from nn_fourbody_potential.common_types import SixSideLengths
 class ReverseEnergyRescaler:
     def __init__(
         self,
-        res_potential: RescalingPotential,
+        res_potential: RescalingFunction,
         reverse_res_limits: RescalingLimits,
     ) -> None:
         self._res_potential = res_potential

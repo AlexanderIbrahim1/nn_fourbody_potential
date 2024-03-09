@@ -74,14 +74,14 @@ def get_training_parameters(
     )
 
 
-def get_rescaling_function() -> rescaling.RescalingPotential:
+def get_rescaling_function() -> rescaling.RescalingFunction:
     # constants chosen so that the ratio of the absolute values of the minimum and maximum reduced
     # energies is the lowest possible
     coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0
     expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.02
     disp_coeff = 0.125 * b12_parahydrogen_midzuno_kihara()
 
-    return rescaling.RescalingPotential(coeff, expon, disp_coeff)
+    return rescaling.RescalingFunction(coeff, expon, disp_coeff)
 
 
 def train_fourbody_model() -> None:

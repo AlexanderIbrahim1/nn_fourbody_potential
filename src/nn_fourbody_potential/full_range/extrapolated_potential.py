@@ -17,6 +17,7 @@ import torch
 
 from nn_fourbody_potential.full_range.constants import SHORT_RANGE_DISTANCE_CUTOFF
 from nn_fourbody_potential.full_range.constants import SHORT_RANGE_SCALING_STEP
+from nn_fourbody_potential.constants import NUMBER_OF_SIDELENGTHS_FOURBODY
 
 from nn_fourbody_potential.full_range.interaction_range import InteractionRange
 from nn_fourbody_potential.full_range.interaction_range import classify_interaction_range
@@ -49,7 +50,8 @@ class ExtrapolatedPotential:
         self._lr_corrector = LongRangeEnergyCorrector()
 
     def __call__(self, input_sidelengths: torch.Tensor) -> torch.Tensor:
-        # TODO: perform a check on the shape of the input
+        if len(input_sidelengths.shape) != 2 or input_sidelengths.shape[1] != NUMBER_OF_SIDELENGTHS_FOURBODY:
+            raise RuntimeError("The input sidelengths tensor must be 2D, and the axis=1 dimension must have 6 values.")
 
         # reason for ignore: function takes any element of six floating-point numbers
         interaction_ranges = [classify_interaction_range(sample.tolist()) for sample in input_sidelengths]  # type: ignore
@@ -128,8 +130,7 @@ class ExtrapolatedPotential:
 
 def _preallocate_batch_sidelengths(interaction_ranges: Sequence[InteractionRange]) -> ReservedDeque:
     total_size_allocation = sum([interaction_range_size_allocation(ir) for ir in interaction_ranges])
-    n_sidelengths = 6
-    sidelengths_shape = (total_size_allocation, n_sidelengths)
+    sidelengths_shape = (total_size_allocation, NUMBER_OF_SIDELENGTHS_FOURBODY)
 
     return ReservedDeque.with_no_size(torch.empty(sidelengths_shape, dtype=torch.float32))
 

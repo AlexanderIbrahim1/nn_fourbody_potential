@@ -16,25 +16,27 @@ import math
 import operator
 import statistics
 
+from nn_fourbody_potential.constants import NUMBER_OF_SIDELENGTHS_FOURBODY
 
-class PotentialType(enum.Enum):
+
+class RescalingFunctionType(enum.Enum):
     ARITHMETIC = enum.auto()
     GEOMETRIC = enum.auto()
 
 
 @dataclasses.dataclass(frozen=True)
-class RescalingPotential:
+class RescalingFunction:
     coeff: float
     expon: float
     disp_coeff: float
-    pot_type: PotentialType = PotentialType.ARITHMETIC
+    pot_type: RescalingFunctionType = RescalingFunctionType.ARITHMETIC
 
     def __post_init__(self) -> None:
-        PT = PotentialType
+        PT = RescalingFunctionType
         if self.pot_type == PT.ARITHMETIC:
-            potential = ArithmeticRescalingPotential(self.coeff, self.expon, self.disp_coeff)
+            potential = ArithmeticRescalingFunction(self.coeff, self.expon, self.disp_coeff)
         elif self.pot_type == PT.GEOMETRIC:
-            potential = GeometricRescalingPotential(self.coeff, self.expon, self.disp_coeff)
+            potential = GeometricRescalingFunction(self.coeff, self.expon, self.disp_coeff)
 
         object.__setattr__(self, "potential", potential)
 
@@ -43,7 +45,7 @@ class RescalingPotential:
 
 
 @dataclasses.dataclass(frozen=True)
-class ArithmeticRescalingPotential:
+class ArithmeticRescalingFunction:
     coeff: float
     expon: float
     disp_coeff: float
@@ -54,7 +56,7 @@ class ArithmeticRescalingPotential:
         assert self.disp_coeff > 0.0
 
     def __call__(self, *six_pair_distances: float) -> float:
-        assert len(six_pair_distances) == 6
+        assert len(six_pair_distances) == NUMBER_OF_SIDELENGTHS_FOURBODY
 
         average_pairdist = statistics.fmean(six_pair_distances)
 
@@ -72,7 +74,7 @@ class ArithmeticRescalingPotential:
 
 
 @dataclasses.dataclass(frozen=True)
-class GeometricRescalingPotential:
+class GeometricRescalingFunction:
     coeff: float
     expon: float
     disp_coeff: float
@@ -83,7 +85,7 @@ class GeometricRescalingPotential:
         assert self.disp_coeff > 0.0
 
     def __call__(self, *six_pair_distances: float) -> float:
-        assert len(six_pair_distances) == 6
+        assert len(six_pair_distances) == NUMBER_OF_SIDELENGTHS_FOURBODY
 
         pairdist_product = functools.reduce(operator.mul, six_pair_distances, 1.0)
         geometric_average = pairdist_product ** (1.0 / 6.0)

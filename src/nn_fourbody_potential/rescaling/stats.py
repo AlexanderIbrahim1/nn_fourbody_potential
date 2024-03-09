@@ -9,14 +9,14 @@ from numpy.typing import NDArray
 
 from nn_fourbody_potential.rescaling.forward_energy_rescaler import ForwardEnergyRescaler
 from nn_fourbody_potential.rescaling.rescaling_limits import RescalingLimits
-from nn_fourbody_potential.rescaling.rescaling_potential import RescalingPotential
+from nn_fourbody_potential.rescaling.rescaling_function import RescalingFunction
 from nn_fourbody_potential.rescaling.utils import forward_rescale_energies_
 
 
 def print_reduced_statistics(
     _side_length_groups: NDArray,
     _energies: NDArray,
-    rescaling_potential: RescalingPotential,
+    rescaling_potential: RescalingFunction,
 ):
     energies = _energies.reshape(_energies.size, -1)
 

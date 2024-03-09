@@ -5,16 +5,16 @@ from typing import Sequence
 
 import numpy as np
 from numpy.typing import NDArray
+
 import torch
 from torch.utils.data import Dataset
 
+from nn_fourbody_potential.constants import N_FEATURES
+from nn_fourbody_potential.constants import N_OUTPUTS
 from nn_fourbody_potential.dataio import load_fourbody_training_data
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations import transform_sidelengths_data
-
-N_FEATURES = 6
-N_OUTPUTS = 1
 
 
 def add_dummy_dimension(data: NDArray) -> NDArray:

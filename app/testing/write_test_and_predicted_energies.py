@@ -10,6 +10,8 @@ import torch
 
 from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF
 from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON
+from nn_fourbody_potential.constants import N_FEATURES
+from nn_fourbody_potential.constants import N_OUTPUTS
 from nn_fourbody_potential.dispersion4b import b12_parahydrogen_midzuno_kihara
 from nn_fourbody_potential.dataio import load_fourbody_training_data
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
@@ -47,14 +49,14 @@ def feature_transformers() -> list[SixSideLengthsTransformer]:
     ]
 
 
-def get_rescaling_function() -> rescaling.RescalingPotential:
+def get_rescaling_function() -> rescaling.RescalingFunction:
     # constants chosen so that the ratio of the absolute values of the minimum and maximum reduced
     # energies is the lowest possible
     coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0
     expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.02
     disp_coeff = 0.125 * b12_parahydrogen_midzuno_kihara()
 
-    return rescaling.RescalingPotential(coeff, expon, disp_coeff)
+    return rescaling.RescalingFunction(coeff, expon, disp_coeff)
 
 
 def model_filepath(size: int) -> Path:
@@ -65,10 +67,8 @@ def model_filepath(size: int) -> Path:
 
 
 def load_model(size: int) -> RegressionMultilayerPerceptron:
-    n_features = 6
-    n_outputs = 1
     layers = SIZE_TO_LAYERS[size]
-    model = RegressionMultilayerPerceptron(n_features, n_outputs, layers)
+    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, layers)
 
     filepath = model_filepath(size)
     model_state_dict = torch.load(filepath)
