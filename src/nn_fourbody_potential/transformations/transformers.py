@@ -32,7 +32,7 @@ class ReciprocalTransformer(SixSideLengthsTransformer):
     """Transform each side length distance 'r' into its reciprocal '1/r'"""
 
     def __call__(self, sidelens: SixSideLengths) -> TransformedSideLengths:
-        return tuple([1.0 / r for r in sidelens])
+        return tuple([1.0 / r for r in sidelens])  # type: ignore
 
 
 @dataclasses.dataclass(frozen=True)
@@ -45,7 +45,7 @@ class ExponentialDecayTransformer(SixSideLengthsTransformer):
         assert self.alpha > 0.0
 
     def __call__(self, sidelens: SixSideLengths) -> TransformedSideLengths:
-        return tuple([math.exp(-r / self.alpha) for r in sidelens])
+        return tuple([math.exp(-r / self.alpha) for r in sidelens])  # type: ignore
 
 
 @dataclasses.dataclass(frozen=True)
@@ -58,7 +58,7 @@ class MinimumPermutationTransformer(SixSideLengthsTransformer):
     less_than_comparator: SixSideLengthsComparator = LessThanEpsilon(1.0e-4)
 
     def __call__(self, sidelens: SixSideLengths) -> TransformedSideLengths:
-        return minimum_permutation(sidelens, self.less_than_comparator)
+        return minimum_permutation(sidelens, self.less_than_comparator)  # type: ignore
 
 
 @dataclasses.dataclass(frozen=True)
@@ -91,4 +91,4 @@ class StandardizeTransformer(SixSideLengthsTransformer):
         object.__setattr__(self, "linear_func", map_init_pair_to_final_pair)
 
     def __call__(self, sidelens: SixSideLengths) -> TransformedSideLengths:
-        return tuple([self.linear_func(s) for s in sidelens])
+        return tuple([self.linear_func(s) for s in sidelens])  # type: ignore

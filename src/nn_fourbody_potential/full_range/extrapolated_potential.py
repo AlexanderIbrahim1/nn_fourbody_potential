@@ -3,10 +3,6 @@ This module contains components for calculating the four-body interaction potent
 energy for parahydrogen, incorporating possible short-range or long-range adjustments.
 """
 
-# TODO:
-# - repo appears to work BUT:
-#   - still need to test it (all orders of inputs, corner cases, etc.)
-
 from __future__ import annotations
 
 from typing import Sequence
@@ -73,11 +69,10 @@ class ExtrapolatedPotential:
                 extrapolated_energies[i_extrap] = abinitio_energy.item()
             elif interact_range == InteractionRange.MIXED_MID_LONG_RANGE:
                 abinitio_energy: torch.Tensor = batch_energies.pop_front()
-                sidelengths = tuple([sl.item() for sl in sample])
-                energy = self._lr_corrector.mixed_from_sidelengths(abinitio_energy.item(), sidelengths)
+                energy = self._lr_corrector.mixed_from_sidelengths(abinitio_energy.item(), sample.tolist())  # type: ignore
                 extrapolated_energies[i_extrap] = energy
             elif interact_range == InteractionRange.LONG_RANGE:
-                extrapolated_energies[i_extrap] = self._lr_corrector.dispersion_from_sidelengths(sample)
+                extrapolated_energies[i_extrap] = self._lr_corrector.dispersion_from_sidelengths(sample.tolist())  # type: ignore
             else:
                 assert False, "unreachable"
 
@@ -94,7 +89,7 @@ class ExtrapolatedPotential:
 
         for sample, interact_range in zip(samples, interaction_ranges):
             if interact_range == InteractionRange.SHORT_RANGE:
-                extrap_sidelengths, extrap_dist_info = prepare_short_range_extrapolation_data(sample, step, cutoff)
+                extrap_sidelengths, extrap_dist_info = prepare_short_range_extrapolation_data(sample.tolist(), step, cutoff)  # type: ignore
                 batch_sidelengths.push_back(torch.tensor(extrap_sidelengths.lower))
                 batch_sidelengths.push_back(torch.tensor(extrap_sidelengths.upper))
                 distance_infos.push_back(extrap_dist_info)
@@ -113,7 +108,7 @@ class ExtrapolatedPotential:
         if batch_sidelengths.size == 0:
             return ReservedDeque.with_size(torch.tensor([], dtype=torch.float32))
 
-        input_data = transform_sidelengths_data(batch_sidelengths.elements, self._transformers)
+        input_data = transform_sidelengths_data(batch_sidelengths.elements, self._transformers)  # type: ignore
         input_data = torch.from_numpy(input_data.astype(np.float32))
 
         with torch.no_grad():
@@ -123,7 +118,7 @@ class ExtrapolatedPotential:
         for i in range(batch_sidelengths.size):
             output = output_data[i].item()
             sidelengths: torch.Tensor = batch_sidelengths[i]
-            output_data[i] = self._output_to_energy_rescaler(output, sidelengths.tolist())
+            output_data[i] = self._output_to_energy_rescaler(output, sidelengths.tolist())  # type: ignore
 
         return ReservedDeque.with_size(output_data)
 
@@ -138,4 +133,4 @@ def _preallocate_batch_sidelengths(interaction_ranges: Sequence[InteractionRange
 def _preallocate_distance_infos(interaction_ranges: Sequence[InteractionRange]) -> ReservedDeque:
     n_short_range = sum([1 for ir in interaction_ranges if ir == InteractionRange.SHORT_RANGE])
 
-    return ReservedDeque.with_no_size(np.empty(n_short_range, dtype=ExtrapDistInfo))
+    return ReservedDeque.with_no_size([None for _ in range(n_short_range)])  # type; ignore

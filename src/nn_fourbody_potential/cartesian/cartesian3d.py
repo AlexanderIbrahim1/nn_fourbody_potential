@@ -61,7 +61,7 @@ class Cartesian3D:
     def __truediv__(self, other: float) -> Cartesian3D:
         return Cartesian3D(self.x / other, self.y / other, self.z / other)
 
-    def _coords(self) -> tuple[float]:
+    def _coords(self) -> tuple[float, float, float]:
         return (self.x, self.y, self.z)
 
     @classmethod

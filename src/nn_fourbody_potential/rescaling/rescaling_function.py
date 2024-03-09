@@ -37,11 +37,13 @@ class RescalingFunction:
             potential = ArithmeticRescalingFunction(self.coeff, self.expon, self.disp_coeff)
         elif self.pot_type == PT.GEOMETRIC:
             potential = GeometricRescalingFunction(self.coeff, self.expon, self.disp_coeff)
+        else:
+            assert False, "unreachable"
 
         object.__setattr__(self, "potential", potential)
 
     def __call__(self, *six_pair_distances: float) -> float:
-        return self.potential(*six_pair_distances)
+        return self.potential(*six_pair_distances)  # type: ignore
 
 
 @dataclasses.dataclass(frozen=True)

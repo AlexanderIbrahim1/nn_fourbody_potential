@@ -48,3 +48,5 @@ class LessThanEpsilon:
         for sidelen0, sidelen1 in zip(s0, s1):
             if abs(sidelen0 - sidelen1) > self.epsilon:
                 return sidelen0 < sidelen1
+
+        return False

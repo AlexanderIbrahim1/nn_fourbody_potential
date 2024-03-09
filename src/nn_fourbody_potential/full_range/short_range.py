@@ -58,10 +58,10 @@ def prepare_short_range_extrapolation_data(
     scaling_ratio_lower = sidelength_lower / sidelength_shortest
     scaling_ratio_upper = sidelength_upper / sidelength_shortest
 
-    sample_lower = tuple([scaling_ratio_lower * sidelen for sidelen in short_range_sample])
-    sample_upper = tuple([scaling_ratio_upper * sidelen for sidelen in short_range_sample])
+    sample_lower = tuple([scaling_ratio_lower * sidelen for sidelen in short_range_sample])  # type: ignore
+    sample_upper = tuple([scaling_ratio_upper * sidelen for sidelen in short_range_sample])  # type: ignore
 
-    extrap_sample = ExtrapolationSideLengths(sample_lower, sample_upper)
+    extrap_sample = ExtrapolationSideLengths(sample_lower, sample_upper)  # type: ignore
 
     return extrap_sample, extrap_distance_info
 
