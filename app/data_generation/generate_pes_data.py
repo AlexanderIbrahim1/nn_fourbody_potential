@@ -13,12 +13,12 @@ from typing import Sequence
 
 import numpy as np
 
-from cartesian.operations import relative_pair_distances
 from hydro4b_coords.geometries import MAP_GEOMETRY_TAG_TO_FUNCTION
 from hydro4b_coords.generate.discretized_distribution import DiscretizedDistribution
 from hydro4b_coords.generate.distributions import exponential_decay_distribution
 from hydro4b_coords.generate.generate import sample_fourbody_geometry
 
+from nn_fourbody_potential.cartesian import relative_pair_distances
 from nn_fourbody_potential.dataio import save_fourbody_sidelengths
 from nn_fourbody_potential.common_types import FourCartesianPoints
 from nn_fourbody_potential import constants

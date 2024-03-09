@@ -18,9 +18,8 @@ import torch
 
 from pathlib import Path
 
-from cartesian import Cartesian3D
-from cartesian.operations import relative_pair_distances
-
+from nn_fourbody_potential.cartesian import Cartesian3D
+from nn_fourbody_potential.cartesian import relative_pair_distances
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations import ReciprocalTransformer
