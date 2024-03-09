@@ -6,8 +6,8 @@ potential energy. The long-range energies converge to the Bade potential.
 import statistics
 from typing import Optional
 
-from dispersion4b.coefficients import b12_parahydrogen_avtz_approx
-from dispersion4b.quadruplet_potential import QuadrupletDispersionPotential
+from nn_fourbody_potential.dispersion4b import b12_parahydrogen_avtz_approx
+from nn_fourbody_potential.dispersion4b import QuadrupletDispersionPotential
 
 from hydro4b_coords.generate.generate import six_side_lengths_to_cartesian
 

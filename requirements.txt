@@ -1,4 +1,3 @@
 hydro4b_coords @ git+https://github.com/AlexanderIbrahim1/hydro4b_coords@main
-dispersion4b @ git+https://github.com/AlexanderIbrahim1/dispersion4b@main
 torch==2.0.0
 numpy>=1.23

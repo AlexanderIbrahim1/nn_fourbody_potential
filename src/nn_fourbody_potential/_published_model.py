@@ -7,9 +7,9 @@ from pathlib import Path
 
 import torch
 
-from dispersion4b.coefficients import c12_parahydrogen_midzuno_kihara
 from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF
 from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON
+from nn_fourbody_potential.dispersion4b import b12_parahydrogen_midzuno_kihara
 from nn_fourbody_potential.full_range import ExtrapolatedPotential
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
@@ -42,7 +42,7 @@ def _published_rescaling_function() -> rescaling.RescalingPotential:
     # energies is the lowest possible
     coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0
     expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.02
-    disp_coeff = 0.5 * c12_parahydrogen_midzuno_kihara()
+    disp_coeff = 2.0 * b12_parahydrogen_midzuno_kihara()
 
     return rescaling.RescalingPotential(coeff, expon, disp_coeff)
 
