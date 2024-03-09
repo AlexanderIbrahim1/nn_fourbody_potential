@@ -42,7 +42,7 @@ def _published_rescaling_function() -> rescaling.RescalingPotential:
     # energies is the lowest possible
     coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0
     expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.02
-    disp_coeff = 2.0 * b12_parahydrogen_midzuno_kihara()
+    disp_coeff = 0.125 * b12_parahydrogen_midzuno_kihara()
 
     return rescaling.RescalingPotential(coeff, expon, disp_coeff)
 
