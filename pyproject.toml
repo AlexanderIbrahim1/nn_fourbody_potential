@@ -2,15 +2,18 @@
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.pytest.ini_options]
-addopts = "--cov=nn_fourbody_potential"
-testpaths = [
-    "tests",
-]
-
 [project]
 name = "nn_fourbody_potential"
 version = "0.1.0"
+authors = [
+    {name = "Alexander Ibrahim", email = "a68ibrahim@uwaterloo.ca"},
+]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only"
+]
+requires-python = ">=3.9"
 
 [tool.mypy]
 mypy_path = "src"
@@ -26,6 +29,12 @@ warn_unreachable = true
 warn_unused_configs = true
 no_implicit_reexport = true
 implicit_reexport = true
+
+[tool.pytest.ini_options]
+addopts = "--cov=nn_fourbody_potential"
+testpaths = [
+    "tests",
+]
 
 [tool.black]
 line-length = 120
