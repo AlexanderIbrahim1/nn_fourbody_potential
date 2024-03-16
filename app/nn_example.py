@@ -1,13 +1,25 @@
 """
-This module contains an example of using the neural network potential energy surface.
+This module contains an example of using the neural network potential energy surface. This
+only exists to show the "guts" of what the inputs and outputs of the neural network go
+through. For the full working potential, see `example.py` in this directory.
+
+NOTE: this example only gives reasonable outputs for geometries that are in the same subset
+of coordinate space as the training data. It is the job of the ExtrapolatedPotential class
+to handle geometries that have very large or very small side lengths.
+
+---
 
 It begins with the four centres of mass (points in 3D Cartesian space), one for each
 parahydrogen molecule, and calculates the six relative pair distances from them. These
 six relative pair distances are fed into the feature transformers, then into the neural
 network.
 
+The output of the neural network is a rescaled version of the four-body interaction energy.
+To get the true energy, the reverse rescaling function needs to be created, and called with
+the neural network's output.
+
 The six relative pair distances can come from any source; there is no need to start with the
-four points in 3d Cartesian space.
+four points in 3D Cartesian space.
 
 The input side lengths (before the transformations are applied) are in units of Angstroms.
 The output energies are in units of wavenumbers.
@@ -20,25 +32,50 @@ from pathlib import Path
 
 from nn_fourbody_potential.cartesian import Cartesian3D
 from nn_fourbody_potential.cartesian import relative_pair_distances
+from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF
+from nn_fourbody_potential.constants import ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON
 from nn_fourbody_potential.constants import N_FEATURES
 from nn_fourbody_potential.constants import N_OUTPUTS
+from nn_fourbody_potential.dispersion4b import b12_parahydrogen_midzuno_kihara
 from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations import ReciprocalTransformer
 from nn_fourbody_potential.transformations import MinimumPermutationTransformer
 from nn_fourbody_potential.transformations import StandardizeTransformer
 from nn_fourbody_potential.transformations import transform_sidelengths_data
+from nn_fourbody_potential import rescaling
 
 
 def feature_transformers() -> list[SixSideLengthsTransformer]:
     min_sidelen = 2.2
-    max_sidelen = 4.5
 
     return [
         ReciprocalTransformer(),
-        StandardizeTransformer((1.0 / max_sidelen, 1.0 / min_sidelen), (0.0, 1.0)),
+        StandardizeTransformer((0.0, 1.0 / min_sidelen), (0.0, 1.0)),
         MinimumPermutationTransformer(),
     ]
+
+
+def output_rescaling_function() -> rescaling.RescalingFunction:
+    # constants chosen by hand, to drastically decrease the dynamic range of the output data;
+    # after a certain amount of fiddling, it seems several choices of parameters would be good enough
+    coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0
+    expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.02
+    disp_coeff = 0.125 * b12_parahydrogen_midzuno_kihara()
+
+    return rescaling.RescalingFunction(coeff, expon, disp_coeff)
+
+
+def output_to_energy_rescaler() -> rescaling.ReverseEnergyRescaler:
+    rescaling_function = rescaling_function()
+
+    # the rescaling values determined from the training data
+    rescaling_limits_to_energies = rescaling.RescalingLimits(
+        from_left=-1.0, from_right=1.0, to_left=-3.2619903087615967, to_right=8.64592170715332
+    )
+    rescaler_output_to_energies = rescaling.ReverseEnergyRescaler(rescaling_function, rescaling_limits_to_energies)
+
+    return rescaler_output_to_energies
 
 
 def main() -> None:
@@ -76,10 +113,7 @@ def main() -> None:
     model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, layer_sizes)
 
     # the path to the specific .pth file
-    # 2999 corresponds to the very last batch
-    modelfile = Path(
-        "models", "nnpes_initial_layers64_128_128_64_lr_0.000200_datasize_8901", "models", "nnpes_02999.pth"
-    )
+    modelfile = Path("..", "models", "fourbodypara_64_128_128_64.pth")
 
     # fill the weights of the model
     model.load_state_dict(torch.load(modelfile))
@@ -87,12 +121,22 @@ def main() -> None:
     # the model should be put in evaluation mode, and the gradients should be turned off
     with torch.no_grad():
         model.eval()
-        output_data = model(input_data)
+        output_data: torch.Tensor = model(input_data)
 
-        # the output of the model is a 1x1 torch Tensor; we must extract the floating-point value from it
-        interaction_energy = output_data.item()
+    rescaling_function = output_rescaling_function()
 
-        print(f"The interaction energy is {interaction_energy} cm^{{-1}}.")
+    # linear rescaling limits (determined from training data for these models)
+    rescaling_limits_to_energies = rescaling.RescalingLimits(
+        from_left=-1.0, from_right=1.0, to_left=-3.2619903087615967, to_right=8.64592170715332
+    )
+
+    # the functor that takes the neural network output and converts it back to the energy
+    rescaler_output_to_energies = rescaling.ReverseEnergyRescaler(rescaling_function, rescaling_limits_to_energies)
+
+    # the rescaling requires both the neural network output and the original six side lengths
+    interaction_energy = rescaler_output_to_energies(output_data.item(), pair_distances.flatten().tolist())
+
+    print(f"The interaction energy is {interaction_energy} cm^{{-1}}.")
 
 
 if __name__ == "__main__":

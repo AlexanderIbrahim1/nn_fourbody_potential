@@ -40,8 +40,8 @@ def _published_feature_transformers() -> list[SixSideLengthsTransformer]:
 
 
 def _published_rescaling_function() -> rescaling.RescalingFunction:
-    # constants chosen so that the ratio of the absolute values of the minimum and maximum reduced
-    # energies is the lowest possible
+    # constants chosen by hand, to drastically decrease the dynamic range of the output data;
+    # after a certain amount of fiddling, it seems several choices of parameters would be good enough
     coeff = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_COEFF / 12.0
     expon = ABINIT_TETRAHEDRON_SHORTRANGE_DECAY_EXPON * 5.02
     disp_coeff = 0.125 * b12_parahydrogen_midzuno_kihara()
