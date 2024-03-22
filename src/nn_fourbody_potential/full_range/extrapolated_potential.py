@@ -39,7 +39,9 @@ class ExtrapolatedPotential:
         neural_network: RegressionMultilayerPerceptron,
         transformers: Sequence[SixSideLengthsTransformer],
         output_to_energy_rescaler: rescaling.ReverseEnergyRescaler,
+        device: str,
     ) -> None:
+        self._device = device
         self._neural_network = neural_network
         self._transformers = transformers
         self._output_to_energy_rescaler = output_to_energy_rescaler
@@ -109,7 +111,7 @@ class ExtrapolatedPotential:
             return ReservedDeque.with_size(torch.tensor([], dtype=torch.float32))
 
         input_data = transform_sidelengths_data(batch_sidelengths.elements, self._transformers)  # type: ignore
-        input_data = torch.from_numpy(input_data.astype(np.float32))
+        input_data = torch.from_numpy(input_data.astype(np.float32)).to(self._device)
 
         with torch.no_grad():
             self._neural_network.eval()

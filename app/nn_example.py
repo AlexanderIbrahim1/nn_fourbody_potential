@@ -78,7 +78,7 @@ def output_to_energy_rescaler() -> rescaling.ReverseEnergyRescaler:
     return rescaler_output_to_energies
 
 
-def main() -> None:
+def main(*, device: str) -> None:
     # begin with the four points in 3D Cartesian space
     # the values chosen correspond to (almost) a tetrahedron with a side length of 2.2 Angstroms
     points = [
@@ -104,7 +104,7 @@ def main() -> None:
     # apply the transformations to the six pair distances
     # then convert the result to a torch Tensor
     input_data = transform_sidelengths_data(pair_distances, transformers)
-    input_data = torch.from_numpy(input_data.astype(np.float32))
+    input_data = torch.from_numpy(input_data.astype(np.float32)).to(device)
 
     # create the PyTorch model; the following parameters (input features, outputs, and the layer sizes)
     # are specific to the model that was trained;
@@ -116,7 +116,9 @@ def main() -> None:
     modelfile = Path("..", "models", "fourbodypara_64_128_128_64.pth")
 
     # fill the weights of the model
-    model.load_state_dict(torch.load(modelfile))
+    model_state_dict = torch.load(modelfile, map_location=torch.device(device))
+    model.load_state_dict(model_state_dict)
+    model = model.to(device)
 
     # the model should be put in evaluation mode, and the gradients should be turned off
     with torch.no_grad():
@@ -140,4 +142,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    device = "cpu"
+    main(device=device)

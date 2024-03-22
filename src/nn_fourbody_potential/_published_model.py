@@ -67,6 +67,7 @@ def _published_load_model_weights(
 
     model_state_dict = torch.load(model_filepath, map_location=torch.device(device))
     model.load_state_dict(model_state_dict)
+    model = model.to(device)
 
     return model
 
@@ -76,4 +77,4 @@ def load_potential(size_label: str, model_filepath: Path, *, device: str) -> Ext
     transformers = _published_feature_transformers()
     model = _published_load_model_weights(size_label, model_filepath, device=device)
     rescaler = _published_output_to_energy_rescaler()
-    return ExtrapolatedPotential(model, transformers, rescaler)
+    return ExtrapolatedPotential(model, transformers, rescaler, device=device)
