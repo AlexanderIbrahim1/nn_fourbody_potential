@@ -59,19 +59,21 @@ def _published_output_to_energy_rescaler() -> rescaling.ReverseEnergyRescaler:
     return rescaler_output_to_energies
 
 
-def _published_load_model_weights(size_label: str, model_filepath: Path) -> RegressionMultilayerPerceptron:
+def _published_load_model_weights(
+    size_label: str, model_filepath: Path, *, device: str
+) -> RegressionMultilayerPerceptron:
     layers = _SIZE_TO_LAYERS[size_label]
     model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, layers)
 
-    model_state_dict = torch.load(model_filepath)
+    model_state_dict = torch.load(model_filepath, map_location=torch.device(device))
     model.load_state_dict(model_state_dict)
 
     return model
 
 
-def load_potential(size_label: str, model_filepath: Path) -> ExtrapolatedPotential:
+def load_potential(size_label: str, model_filepath: Path, *, device: str) -> ExtrapolatedPotential:
     # TODO: add input sanitizing
     transformers = _published_feature_transformers()
-    model = _published_load_model_weights(size_label, model_filepath)
+    model = _published_load_model_weights(size_label, model_filepath, device=device)
     rescaler = _published_output_to_energy_rescaler()
     return ExtrapolatedPotential(model, transformers, rescaler)
