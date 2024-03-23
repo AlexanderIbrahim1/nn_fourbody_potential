@@ -11,13 +11,14 @@ from nn_fourbody_potential import load_potential
 
 
 def main() -> None:
+    device = "cpu"
     size_label = "size64"
     model_filepath = Path("..", "models", "fourbodypara_64_128_128_64.pth")
-    potential = load_potential(size_label, model_filepath)
+    potential = load_potential(size_label, model_filepath, device=device)
 
     side_lengths = torch.linspace(2.0, 5.0, 1024)
 
-    input_sidelengths = torch.tensor([[r for _ in range(6)] for r in side_lengths]).reshape(1024, 6).to("cuda")
+    input_sidelengths = torch.tensor([[r for _ in range(6)] for r in side_lengths]).reshape(1024, 6).to(device)
     energies = potential(input_sidelengths)
 
     fig = plt.figure()
