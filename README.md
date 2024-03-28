@@ -16,11 +16,18 @@ matplotlib >= 3.8.3   # for seeing the plot in `example.py`
 
 
 ## Instructions
-1. Clone the repo and enter [if applicable]
+1a. If accessing from github, clone the repo and enter
 ```bash
 git clone git@github.com:AlexanderIbrahim1/nn_fourbody_potential.git
 cd nn_fourbody_potential
 ```
+1b. If accessing from the `PES.tar` file provided by JCP, untar and enter
+```bash
+tar -xvf PES.tar
+cd nn_fourbody_potential
+```
+
+NOTE: to save space, the git history has been removed from the tarball; to access the git history, you must access the repository through github.
 
 2. Create the virtual environment (unless you already have one set up)
 ```bash
