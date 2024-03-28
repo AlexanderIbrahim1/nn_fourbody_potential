@@ -138,6 +138,7 @@ app/energy_separation/models/
 app/figures/
 app/reproducible_training/models/
 app/plotting/
+app/torchscript_files/
 
 # vscode
 .vscode
