@@ -1,0 +1,17 @@
+# This is the input file for the program.
+#
+# It contains the six side lengths of the tetrahedron, which, when given the
+# labels of {0, 1, 2, 3}, are written in the order:
+#   r01  r02  r03  r12  r13  r23
+#
+# This example, of using an input file to write out the side lengths, and having
+# the output written to `output.txt`, is provided for compliance with the
+# requirements for publishing PESs in the Journal of Chemical Physics. 
+#
+# The model can also be used through Python directly, without the use of an input
+# file.
+# 
+# The input side lengths are in units of angstroms, and the output energy is in
+# units of wavenumbers.
+#
+2.2000000  2.2000000  2.2000000  3.1112699  3.1112699  3.5925850

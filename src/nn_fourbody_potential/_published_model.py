@@ -4,6 +4,7 @@ interaction PES for parahydrogen.
 """
 
 from pathlib import Path
+from typing import Union
 
 import torch
 
@@ -72,9 +73,14 @@ def _published_load_model_weights(
     return model
 
 
-def load_potential(size_label: str, model_filepath: Path, *, device: str) -> ExtrapolatedPotential:
-    # TODO: add input sanitizing
+def load_potential(size_label: str, model_filepath: Union[str, Path], *, device: str) -> ExtrapolatedPotential:
+    if size_label not in _SIZE_TO_LAYERS:
+        raise RuntimeError(
+            "Invalid size label found for the neural network model.\n"
+            "The size label must be one of: 'size8', 'size16', 'size32', 'size64'"
+        )
+
     transformers = _published_feature_transformers()
-    model = _published_load_model_weights(size_label, model_filepath, device=device)
+    model = _published_load_model_weights(size_label, Path(model_filepath), device=device)
     rescaler = _published_output_to_energy_rescaler()
     return ExtrapolatedPotential(model, transformers, rescaler, device=device)

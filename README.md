@@ -1,6 +1,10 @@
 # nn_fourbody_potential
 
-A repository for creating the potential energy surface for the interaction energy between four molecules of parahydrogen, using a Multilayer Perceptron, with pytorch.
+This is the repository for the potential energy surface (PES) for the four-body correction interaction energy between four molecules of parahydrogen. Only the isotopic term in the potential expansion is used.
+
+We recommend using the potential through Python (described in the `Recommended Usage` section below).
+
+For compliance with the requirements for publishing PESs in the Journal of Chemical Physics, we also provide an example where a Python script reads an input file and produces an output file (described in the `Input and Output File Example` section below).
 
 
 ## Requirements
@@ -12,8 +16,7 @@ matplotlib >= 3.8.3   # for seeing the plot in `example.py`
 
 
 ## Instructions
-
-1. Clone the repo and enter
+1. Clone the repo and enter [if applicable]
 ```bash
 git clone git@github.com:AlexanderIbrahim1/nn_fourbody_potential.git
 cd nn_fourbody_potential
@@ -39,5 +42,33 @@ cd app
 python tetrahedron_example.py  # get four-body interaction energy for the tetrahedron geometry
 python nn_example.py  # the neural network without the ExtrapolatedPotential wrapper
 ```
+
+
+## Recommended Usage
+We recommend creating and using the potential in a way similar to the following
+```py
+from pathlib import Path
+from nn_fourbody_potential import load_potential
+import torch
+
+size_label: str = "size64"
+model_filepath: Path = Path('path', 'to', 'pytorch', 'model', 'model.pth')
+device: str = "cpu"  # "cuda"
+
+potential = load_potential(size_label, model_filepath, device=device)
+
+# six side lengths go here
+side_lengths = torch.tensor([2.2, 2.3, 2.4, 2.5, 2.45, 2.35]).reshape(1, 6).to(device)
+energy = potential(side_lengths)
+```
+
+The files `app/tetrahedron_example.py` and `app/input_output_example/calculate_four_body_energy_example.py` provide examples of using the potential this way.
+
+
+## Input and Output File Example
+In the directory `app/input_output_example`, we provide a Python script `calculate_four_body_energy_example.py` and a file `input.txt`.
+
+The `input.txt` file contains an example of six side lengths of a four-body geometry.
+The Python script will read in those six side lengths, calculate the four-body correction interaction energy for four parahydrogen molecules, and write them to `output.txt`.
 
 
