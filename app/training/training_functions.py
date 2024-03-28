@@ -14,6 +14,15 @@ import training_state
 import training_utils
 
 
+class MSLELoss(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = torch.nn.MSELoss()
+
+    def forward(self, pred, actual):
+        return self.mse(torch.log(pred + 1.0), torch.log(actual + 1.0))
+
+
 def update_training_state_data(
     state_data: training_state.TrainingStateData,
     saved_models_dirpath: Path,

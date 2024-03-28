@@ -36,15 +36,6 @@ from training_utils import N_FEATURES
 from training_utils import N_OUTPUTS
 
 
-class MSLELoss(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.mse = torch.nn.MSELoss()
-
-    def forward(self, pred, actual):
-        return self.mse(torch.log(pred + 1.0), torch.log(actual + 1.0))
-
-
 def get_data_transforms_flattening() -> list[SixSideLengthsTransformer]:
     min_sidelen = 2.2
 
@@ -89,7 +80,7 @@ def train_fourbody_model() -> None:
     training_nohcp_data_filepath = FILTERED_SPLIT_ABINITIO_TRAIN_NOHCP_DATA_DIRPATH
     testing_data_filepath = FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH
     validation_data_filepath = FILTERED_SPLIT_ABINITIO_VALID_DATA_DIRPATH
-    other_info = "_rescaling_msle_model_large0"
+    other_info = "_rescaling_model_large0"
 
     rescaling_potential = get_rescaling_function()
     transforms = get_data_transforms_flattening()
