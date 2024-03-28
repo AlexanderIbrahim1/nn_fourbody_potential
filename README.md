@@ -3,6 +3,14 @@
 A repository for creating the potential energy surface for the interaction energy between four molecules of parahydrogen, using a Multilayer Perceptron, with pytorch.
 
 
+## Requirements
+```bash
+Python 3.9 <= 3.11
+torch >= 2.0.0
+matplotlib >= 3.8.3   # for seeing the plot in `example.py`
+```
+
+
 ## Instructions
 
 1. Clone the repo and enter
@@ -28,14 +36,8 @@ cd ..
 4. Run the examples
 ```bash
 cd app
-python example.py  # get four-body interaction energy for the tetrahedron geometry of several sizes
+python tetrahedron_example.py  # get four-body interaction energy for the tetrahedron geometry
 python nn_example.py  # the neural network without the ExtrapolatedPotential wrapper
 ```
 
 
-## Requirements
-```bash
-Python 3.9 <= 3.11
-torch >= 2.0.0
-matplotlib >= 3.8.3   # for seeing the plot in `example.py`
-```
