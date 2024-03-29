@@ -27,8 +27,6 @@ tar -xvf PES.tar
 cd nn_fourbody_potential
 ```
 
-NOTE: to save space, the git history has been removed from the tarball; to access the git history, you must access the repository through github.
-
 2. Create the virtual environment (unless you already have one set up)
 ```bash
 virtualenv venv -p python  # version 3.9, 3.10, or 3.11 as of time of release
