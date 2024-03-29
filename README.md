@@ -77,3 +77,9 @@ The `input.txt` file contains an example of six side lengths of a four-body geom
 The Python script will read in those six side lengths, calculate the four-body correction interaction energy for four parahydrogen molecules, and write them to `output.txt`.
 
 
+## Data Cleaning and Training
+The code for splitting the data into training, testing, and validation sets is located in `app/data_cleaning`. The main script of interest is `app/data_cleaning/split_energies.py`.
+
+The code for training the neural network is located in `app/training`.
+
+The training is done through the `train_fourbody_model()` function in `app/training/training.py`. The other modules in the `app/training` contain functions and types that assist with the training process. The code is currently set for training the `64-128-128-64` model.
