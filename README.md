@@ -1,5 +1,7 @@
 # nn_fourbody_potential
 
+**NOTE: users who have accessed this repository through the `PES.tar` file provided as supplementary material by the Journal of Chemical Physics, are encouraged to access the github repository [github.com/AlexanderIbrahim1/nn_fourbody_potential](https://github.com/AlexanderIbrahim1/nn_fourbody_potential) for any possible updates to the potential.**
+
 This is the repository for the potential energy surface (PES) for the four-body correction interaction energy between four molecules of parahydrogen. Only the isotopic term in the potential expansion is used.
 
 We recommend using the potential through Python (described in the `Recommended Usage` section below).
@@ -83,3 +85,17 @@ The code for splitting the data into training, testing, and validation sets is l
 The code for training the neural network is located in `app/training`.
 
 The training is done through the `train_fourbody_model()` function in `app/training/training.py`. The other modules in the `app/training` contain functions and types that assist with the training process. The code is currently set for training the `64-128-128-64` model.
+
+
+## Two-Body and Three-Body Potentials
+The journal publication that accompanies this repository also discusses using this repository alongside a two-body and three-body PESs for parahydrogen.
+
+### Two-Body Potential
+The two-body potential is described in the paper **M. Schmidt *et al.* (2015). Raman vibrational shifts of small clusters of hydrogen isotopologues. *J. Phys. Chem. A* vol. 199, p. 12551-12561.**
+
+The function used to construct it is given by equations (15) through (21), using the fit parameters in table (6) that correspond to parahydrogen.
+
+### Three-Body Potential
+The three-body potential is described in the paper **A. Ibrahim and P.-N. Roy (2022). Three-body potential energy surface for para-hydrogen. *J. Chem. Phys.* vol. 156, p. 044301.**
+
+The repository used to construct the three-body PES is found at [github.com/roygroup/threebodyparah2](https://github.com/roygroup/threebodyparah2). It contains detailed instructions on how to compile the PES and test it against certain cases. 
