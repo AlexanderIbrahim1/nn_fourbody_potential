@@ -86,6 +86,7 @@ def six_side_lengths_to_cartesian(
     r12: float,
     r13: float,
     r23: float,
+    sqrt_tolerance: float = 1.0e-6,
 ) -> tuple[Cartesian3D, Cartesian3D, Cartesian3D, Cartesian3D]:
     """
     This function uses the 6 relative pair distances between the four points to
@@ -109,12 +110,23 @@ def six_side_lengths_to_cartesian(
     cos_theta102 = (r01**2 + r02**2 - r12**2) / (2.0 * r01 * r02)
 
     x2 = r02 * cos_theta102
-    y2 = math.sqrt(r02**2 - x2**2)
+    x3 = (r03**2 - r13**2 + r01**2) / (2.0 * r01)
+
+    y2_inner = r02**2 - x2**2
+    if y2_inner > sqrt_tolerance:
+        y2 = math.sqrt(y2_inner)
+        y3 = (r03**2 - r23**2 + r02**2 - 2.0 * x2 * x3) / (2.0 * y2)
+    else:
+        y2 = 0.0
+        y3 = 0.0
+
     z2 = 0.0
 
-    x3 = (r03**2 - r13**2 + r01**2) / (2.0 * r01)
-    y3 = (r03**2 - r23**2 + r02**2 - 2.0 * x2 * x3) / (2.0 * y2)
-    z3 = math.sqrt(r03**2 - x3**2 - y3**2)
+    z3_inner = r03**2 - x3**2 - y3**2
+    if z3_inner > sqrt_tolerance:
+        z3 = math.sqrt(z3_inner)
+    else:
+        z3 = 0.0
 
     point0 = Cartesian3D(0.0, 0.0, 0.0)
     point1 = Cartesian3D(r01, 0.0, 0.0)
