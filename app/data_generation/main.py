@@ -5,11 +5,10 @@ model training process.
 
 from common_types import SideLengthGenerator
 from common_types import SixSideLengths
-
 from random_generation import make_prng
 from random_generation import MAP_CATEGORY_TO_SIDE_LENGTH_GENERATOR
-
 from side_lengths_to_cartesian import maybe_six_side_lengths_to_cartesian
+from visualize import visualize_in_3d
 
 # PLAN
 # - create functor that generates a random number
@@ -21,7 +20,7 @@ from side_lengths_to_cartesian import maybe_six_side_lengths_to_cartesian
 
 
 def generate_n_valid_samples(
-    generator: SideLengthGenerator, n_samples: int, n_max_attempts_per_sample: int = 10
+    generator: SideLengthGenerator, n_samples: int, n_max_attempts_per_sample: int = 100
 ) -> list[SixSideLengths]:
     output: list[SixSideLengths] = []
 
@@ -41,12 +40,12 @@ def generate_n_valid_samples(
 
 if __name__ == "__main__":
     short = make_prng(2.2, 2.6)
-    long = make_prng(3.3, 5.5)
+    long = make_prng(4.0, 8.5)
 
-    generator_maker = MAP_CATEGORY_TO_SIDE_LENGTH_GENERATOR[2]
+    generator_maker = MAP_CATEGORY_TO_SIDE_LENGTH_GENERATOR[5]
     generator = generator_maker(short, long)
 
-    side_lengths = generate_n_valid_samples(generator, 1000)
+    side_lengths = generate_n_valid_samples(generator, 1)
     points = [maybe_six_side_lengths_to_cartesian(*sl) for sl in side_lengths]
 
-    print(points)
+    visualize_in_3d(points[0])
