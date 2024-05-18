@@ -4,12 +4,8 @@ geometry as being short-range, mid-range, or long-range. These classifications a
 to determine how a sample is treated.
 """
 
-# TODO:
-# - can save time by not recalculating the mean when comparing long and mid-long ranges
-
-import statistics
-
 import enum
+import statistics
 
 from nn_fourbody_potential.common_types import SixSideLengths
 from nn_fourbody_potential.full_range.constants import SHORT_RANGE_DISTANCE_CUTOFF
