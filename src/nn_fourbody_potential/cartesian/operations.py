@@ -92,6 +92,8 @@ def six_side_lengths_to_cartesian(
     This function uses the 6 relative pair distances between the four points to
     recover four Cartesian points in 3D space.
 
+    This function assumes that the six side lengths correspond to a valid geometry.
+
     The four points returned satisfy the following properties:
      - point0 is at the origin
      - point1 lies on the positive x-axis
@@ -107,9 +109,8 @@ def six_side_lengths_to_cartesian(
     lost when converting from relative pair distances to Cartesian coordinates. The
     three DOF describing the orientation in space of the four-body system are also lost.
     """
-    cos_theta102 = (r01**2 + r02**2 - r12**2) / (2.0 * r01 * r02)
-
-    x2 = r02 * cos_theta102
+    x1 = r01
+    x2 = (r01**2 + r02**2 - r12**2) / (2.0 * r01)
     x3 = (r03**2 - r13**2 + r01**2) / (2.0 * r01)
 
     y2_inner = r02**2 - x2**2
@@ -120,17 +121,11 @@ def six_side_lengths_to_cartesian(
         y2 = 0.0
         y3 = 0.0
 
-    z2 = 0.0
-
-    z3_inner = r03**2 - x3**2 - y3**2
-    if z3_inner > sqrt_tolerance:
-        z3 = math.sqrt(z3_inner)
-    else:
-        z3 = 0.0
+    z3 = math.sqrt(max(0.0, r03**2 - x3**2 - y3**2))
 
     point0 = Cartesian3D(0.0, 0.0, 0.0)
-    point1 = Cartesian3D(r01, 0.0, 0.0)
-    point2 = Cartesian3D(x2, y2, z2)
+    point1 = Cartesian3D(x1, 0.0, 0.0)
+    point2 = Cartesian3D(x2, y2, 0.0)
     point3 = Cartesian3D(x3, y3, z3)
 
     return (point0, point1, point2, point3)
