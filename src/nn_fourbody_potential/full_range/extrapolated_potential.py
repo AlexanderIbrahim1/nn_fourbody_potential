@@ -59,24 +59,40 @@ class ExtrapolatedPotential:
 
         extrapolated_energies = torch.empty(len(input_sidelengths), dtype=torch.float32)
 
-        for i_extrap, (sample, interact_range) in enumerate(zip(input_sidelengths, interaction_ranges)):
-            if interact_range == InteractionRange.SHORT_RANGE:
-                dist_info = distance_infos.pop_front()
-                lower_energy: torch.Tensor = batch_energies.pop_front()
-                upper_energy: torch.Tensor = batch_energies.pop_front()
-                extrap_energies = ExtrapolationEnergies(lower_energy.item(), upper_energy.item())
-                extrapolated_energies[i_extrap] = short_range_energy_extrapolation(dist_info, extrap_energies)
-            elif interact_range == InteractionRange.MID_RANGE:
-                abinitio_energy: torch.Tensor = batch_energies.pop_front()
-                extrapolated_energies[i_extrap] = abinitio_energy.item()
-            elif interact_range == InteractionRange.MIXED_MID_LONG_RANGE:
-                abinitio_energy: torch.Tensor = batch_energies.pop_front()
-                energy = self._lr_corrector.mixed_from_sidelengths(abinitio_energy.item(), sample.tolist())  # type: ignore
-                extrapolated_energies[i_extrap] = energy
-            elif interact_range == InteractionRange.LONG_RANGE:
-                extrapolated_energies[i_extrap] = self._lr_corrector.dispersion_from_sidelengths(sample.tolist())  # type: ignore
+        def calculate_short_range_energy() -> float:
+            dist_info = distance_infos.pop_front()
+            lower_energy: torch.Tensor = batch_energies.pop_front()
+            upper_energy: torch.Tensor = batch_energies.pop_front()
+            extrap_energies = ExtrapolationEnergies(lower_energy.item(), upper_energy.item())
+            return short_range_energy_extrapolation(dist_info, extrap_energies)
+
+        def calculate_mid_range_energy() -> float:
+            abinitio_energy: torch.Tensor = batch_energies.pop_front()
+            return abinitio_energy.item()
+
+        def calculate_long_range_energy(sample: torch.Tensor) -> float:
+            return self._lr_corrector.dispersion_from_sidelengths(sample.tolist())  # type: ignore
+
+        def calculate_mixed_range_energy(shortmid_energy: float, sample: torch.Tensor) -> float:
+            return self._lr_corrector.mixed_from_sidelengths(shortmid_energy, sample.tolist())  # type: ignore
+
+        for i_extrap, (sample, ir) in enumerate(zip(input_sidelengths, interaction_ranges)):
+            if ir == InteractionRange.ABINITIO_SHORT:
+                energy = calculate_short_range_energy()
+            elif ir == InteractionRange.ABINITIO_MID:
+                energy = calculate_mid_range_energy()
+            elif ir == InteractionRange.MIXED_SHORT:
+                short_energy = calculate_short_range_energy()
+                energy = calculate_mixed_range_energy(short_energy, sample)
+            elif ir == InteractionRange.MIXED_MID:
+                mid_energy = calculate_mid_range_energy()
+                energy = calculate_mixed_range_energy(mid_energy, sample)
+            elif ir == InteractionRange.LONG:
+                energy = calculate_long_range_energy(sample)
             else:
                 assert False, "unreachable"
+
+            extrapolated_energies[i_extrap] = energy
 
         return extrapolated_energies
 
@@ -89,17 +105,15 @@ class ExtrapolatedPotential:
         step = SHORT_RANGE_SCALING_STEP
         cutoff = SHORT_RANGE_DISTANCE_CUTOFF
 
-        for sample, interact_range in zip(samples, interaction_ranges):
-            if interact_range == InteractionRange.SHORT_RANGE:
+        for sample, ir in zip(samples, interaction_ranges):
+            if ir == InteractionRange.ABINITIO_SHORT or ir == InteractionRange.MIXED_SHORT:
                 extrap_sidelengths, extrap_dist_info = prepare_short_range_extrapolation_data(sample.tolist(), step, cutoff)  # type: ignore
                 batch_sidelengths.push_back(torch.tensor(extrap_sidelengths.lower))
                 batch_sidelengths.push_back(torch.tensor(extrap_sidelengths.upper))
                 distance_infos.push_back(extrap_dist_info)
-            elif interact_range == InteractionRange.MID_RANGE:
+            elif ir == InteractionRange.ABINITIO_MID or ir == InteractionRange.MIXED_MID:
                 batch_sidelengths.push_back(sample)
-            elif interact_range == InteractionRange.MIXED_MID_LONG_RANGE:
-                batch_sidelengths.push_back(sample)
-            elif interact_range == InteractionRange.LONG_RANGE:
+            elif ir == InteractionRange.LONG:
                 continue
             else:
                 assert False, "unreachable"
@@ -133,6 +147,9 @@ def _preallocate_batch_sidelengths(interaction_ranges: Sequence[InteractionRange
 
 
 def _preallocate_distance_infos(interaction_ranges: Sequence[InteractionRange]) -> ReservedDeque:
-    n_short_range = sum([1 for ir in interaction_ranges if ir == InteractionRange.SHORT_RANGE])
+    def is_short(ir: InteractionRange) -> bool:
+        return ir == InteractionRange.MIXED_SHORT or ir == InteractionRange.ABINITIO_SHORT
+
+    n_short_range = sum([1 for ir in interaction_ranges if is_short(ir)])
 
     return ReservedDeque.with_no_size([None for _ in range(n_short_range)])  # type; ignore
