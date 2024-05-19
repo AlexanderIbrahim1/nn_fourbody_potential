@@ -2,6 +2,8 @@
 This module contains the neural network model to be trained.
 """
 
+from typing import Callable
+
 import torch
 
 from nn_fourbody_potential.transformations.transformers import SixSideLengthsTransformer
@@ -37,12 +39,18 @@ class TrainingParameters:
 
 class RegressionMultilayerPerceptron(torch.nn.Module):
     def __init__(
-        self, n_features: int, n_outputs: int, hidden_layer_sizes: list[int], apply_batch_norm: bool = False
+        self,
+        n_features: int,
+        n_outputs: int,
+        hidden_layer_sizes: list[int],
+        apply_batch_norm: bool = False,
+        *,
+        activation_function_factory: Callable[[], torch.nn.Module] = torch.nn.ReLU,
     ) -> None:
         super().__init__()
 
         self._layer_sizes = [n_features] + hidden_layer_sizes + [n_outputs]
-        self.layers = _create_linear_sequential(self._layer_sizes, apply_batch_norm)
+        self.layers = _create_linear_sequential(self._layer_sizes, apply_batch_norm, activation_function_factory)
 
     def forward(self, x):
         return self.layers(x)
@@ -60,7 +68,11 @@ class RegressionMultilayerPerceptron(torch.nn.Module):
         return self._layer_sizes
 
 
-def _create_linear_sequential(layer_sizes: list[int], apply_batch_norm: bool = False) -> torch.nn.Sequential:
+def _create_linear_sequential(
+    layer_sizes: list[int],
+    apply_batch_norm: bool,
+    activation_function_factory: Callable[[], torch.nn.Module],
+) -> torch.nn.Sequential:
     """
     Create a sequence of perceptrons with ReLU activation functions between them.
 
@@ -88,7 +100,7 @@ def _create_linear_sequential(layer_sizes: list[int], apply_batch_norm: bool = F
             layers.append(torch.nn.Linear(layer_sizes[i], layer_sizes[i + 1]))
             if apply_batch_norm:
                 layers.append(torch.nn.BatchNorm1d(num_features=layer_sizes[i + 1]))
-            layers.append(torch.nn.ReLU())
+            layers.append(activation_function_factory())
 
         # the last pair of sizes
         layers.append(torch.nn.Linear(layer_sizes[-2], layer_sizes[-1]))

@@ -30,6 +30,19 @@ _SIZE_TO_LAYERS: dict[str, list[int]] = {
 }
 
 
+_ACTIVATION_LABELS: list[str] = ["relu", "shiftedsoftplus"]
+
+
+class ShiftedSoftplus(torch.nn.Softplus):
+    def __init__(self, beta: int = 1, origin: float = 0.5, threshold: int = 20) -> None:
+        super(ShiftedSoftplus, self).__init__(beta, threshold)
+        self.origin = origin
+        self.sp0 = torch.nn.functional.softplus(torch.zeros(1) + self.origin, self.beta, self.threshold).item()
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return torch.nn.functional.softplus(input + self.origin, self.beta, self.threshold) - self.sp0
+
+
 def _published_feature_transformers() -> list[SixSideLengthsTransformer]:
     min_sidelen = 2.2
 
@@ -61,10 +74,26 @@ def _published_output_to_energy_rescaler() -> rescaling.ReverseEnergyRescaler:
 
 
 def _published_load_model_weights(
-    size_label: str, model_filepath: Path, *, device: str
+    size_label: str, activation_label: str, model_filepath: Path, *, device: str
 ) -> RegressionMultilayerPerceptron:
     layers = _SIZE_TO_LAYERS[size_label]
-    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, layers)
+
+    if activation_label == "relu":
+        model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, layers)
+    elif activation_label == "shiftedsoftplus":
+        model = RegressionMultilayerPerceptron(
+            N_FEATURES, N_OUTPUTS, layers, activation_function_factory=ShiftedSoftplus
+        )
+    else:
+        raise RuntimeError("Impossible branch taken.")
+
+    # TODO: remove this in the final version (temporary workaround)
+    if activation_label == "shiftedsoftplus":
+        model_state_dict = torch.load(model_filepath, map_location=torch.device(device))
+        model_state_dict = model_state_dict["model_state_dict"]
+        model.load_state_dict(model_state_dict)
+        model = model.to(device)
+        return model
 
     model_state_dict = torch.load(model_filepath, map_location=torch.device(device))
     model.load_state_dict(model_state_dict)
@@ -73,14 +102,23 @@ def _published_load_model_weights(
     return model
 
 
-def load_potential(size_label: str, model_filepath: Union[str, Path], *, device: str) -> ExtrapolatedPotential:
+def load_potential(
+    size_label: str, activation_label: str, model_filepath: Union[str, Path], *, device: str
+) -> ExtrapolatedPotential:
     if size_label not in _SIZE_TO_LAYERS:
         raise RuntimeError(
             "Invalid size label found for the neural network model.\n"
             "The size label must be one of: 'size8', 'size16', 'size32', 'size64'"
         )
 
+    activation_label = str.lower(activation_label)
+    if activation_label not in _ACTIVATION_LABELS:
+        raise RuntimeError(
+            "Invalid activation label found for the neural network model.\n"
+            "The activation label must be one of: 'relu', 'shiftedsoftplus'"
+        )
+
     transformers = _published_feature_transformers()
-    model = _published_load_model_weights(size_label, Path(model_filepath), device=device)
+    model = _published_load_model_weights(size_label, activation_label, Path(model_filepath), device=device)
     rescaler = _published_output_to_energy_rescaler()
     return ExtrapolatedPotential(model, transformers, rescaler, device=device)

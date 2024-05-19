@@ -40,10 +40,18 @@ def main(device: str, scale: str) -> None:
 
     # select the model size ("size8", "size16", "size32", "size64"), and the path to that model
     size_label = "size64"
-    model_filepath = Path("..", "models", "fourbodypara_64_128_128_64.pth")
+    activation_label = "shiftedsoftplus"
+    # model_filepath = Path("..", "models", "fourbodypara_64_128_128_64.pth")
+    model_filepath = Path(
+        "training",
+        "models",
+        "nnpes_rescaling_model_shiftedsoftplus_large0_layers64_128_128_64_lr_0.000200_datasize_13610",
+        "models",
+        "nnpes_00999.pth",
+    )
 
     # create the fully-extrapolated PES
-    potential = load_potential(size_label, model_filepath, device=device)
+    potential = load_potential(size_label, activation_label, model_filepath, device=device)
 
     # create perfect tetrahedron geometries with side lengths between 2.0 and 5.0 Angstroms
     side_lengths = torch.linspace(2.0, 5.0, 1024)

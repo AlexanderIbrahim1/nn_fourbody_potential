@@ -23,6 +23,16 @@ class MSLELoss(torch.nn.Module):
         return self.mse(torch.log(pred + 1.0), torch.log(actual + 1.0))
 
 
+class ShiftedSoftplus(torch.nn.Softplus):
+    def __init__(self, beta: int = 1, origin: float = 0.5, threshold: int = 20) -> None:
+        super(ShiftedSoftplus, self).__init__(beta, threshold)
+        self.origin = origin
+        self.sp0 = torch.nn.functional.softplus(torch.zeros(1) + self.origin, self.beta, self.threshold).item()
+
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
+        return torch.nn.functional.softplus(input + self.origin, self.beta, self.threshold) - self.sp0
+
+
 def update_training_state_data(
     state_data: training_state.TrainingStateData,
     saved_models_dirpath: Path,
@@ -134,3 +144,23 @@ def test_model(
     testing_loss = training_utils.evaluate_model_loss(model, loss_calculator, x_test, y_test)
 
     return testing_loss
+
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    from matplotlib.axes import Axes
+
+    shiftedsoftplus = ShiftedSoftplus()
+    xdata = torch.linspace(-4.0, 4.0, 256)
+    ydata = shiftedsoftplus.forward(xdata)
+
+    fig = plt.figure()
+    ax: Axes = fig.add_subplot()
+
+    ax.plot(xdata, ydata)
+    ax.grid(True)
+
+    ax.set_xlim(-4.0, 4.0)
+    ax.set_ylim(-1.0, 4.0)
+
+    plt.show()

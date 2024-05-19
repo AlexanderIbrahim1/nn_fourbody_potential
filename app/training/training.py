@@ -80,7 +80,7 @@ def train_fourbody_model() -> None:
     training_nohcp_data_filepath = FILTERED_SPLIT_ABINITIO_TRAIN_NOHCP_DATA_DIRPATH
     testing_data_filepath = FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH
     validation_data_filepath = FILTERED_SPLIT_ABINITIO_VALID_DATA_DIRPATH
-    other_info = "_rescaling_model_large0"
+    other_info = "_rescaling_model_shiftedsoftplus_large1"
 
     rescaling_potential = get_rescaling_function()
     transforms = get_data_transforms_flattening()
@@ -89,7 +89,9 @@ def train_fourbody_model() -> None:
     torch.manual_seed(params.seed)
     np.random.seed(params.seed)
 
-    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, params.layers)
+    model = RegressionMultilayerPerceptron(
+        N_FEATURES, N_OUTPUTS, params.layers, activation_function_factory=training_functions.ShiftedSoftplus
+    )
 
     # fmt: off
     side_length_groups_train, energies_train = load_fourbody_training_data(training_data_filepath)
