@@ -48,7 +48,7 @@ def maybe_six_side_lengths_to_cartesian(
     y2_inner = r02**2 - x2**2
 
     # an indication that the geometry is invalid
-    if y2_inner < 0.0 and abs(y2_inner) > tolerance:
+    if y2_inner < -tolerance:
         return None
 
     y3_numerator = r03**2 - r23**2 + r02**2 - 2.0 * x2 * x3
@@ -57,7 +57,7 @@ def maybe_six_side_lengths_to_cartesian(
     z3_inner = r03**2 - x3**2 - y3**2
 
     # an indication that the geometry is invalid
-    if z3_inner < 0.0 and abs(z3_inner) > tolerance:
+    if z3_inner < -tolerance:
         return None
 
     z3 = math.sqrt(max(0.0, z3_inner))

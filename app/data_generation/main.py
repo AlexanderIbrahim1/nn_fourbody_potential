@@ -39,13 +39,15 @@ def generate_n_valid_samples(
 
 
 if __name__ == "__main__":
-    short = make_prng(2.2, 2.6)
-    long = make_prng(4.0, 8.5)
+    short = make_prng(1.5, 2.0)
+    long = make_prng(4.0, 5.5)
 
-    generator_maker = MAP_CATEGORY_TO_SIDE_LENGTH_GENERATOR[5]
+    generator_maker = MAP_CATEGORY_TO_SIDE_LENGTH_GENERATOR[0]
     generator = generator_maker(short, long)
 
     side_lengths = generate_n_valid_samples(generator, 1)
-    points = [maybe_six_side_lengths_to_cartesian(*sl) for sl in side_lengths]
+    print(side_lengths)
+    print(sum(side_lengths[0]) / 6.0)
+    # points = [maybe_six_side_lengths_to_cartesian(*sl) for sl in side_lengths]
 
-    visualize_in_3d(points[0])
+    # visualize_in_3d(points[0])
