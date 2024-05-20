@@ -87,14 +87,6 @@ def _published_load_model_weights(
     else:
         raise RuntimeError("Impossible branch taken.")
 
-    # TODO: remove this in the final version (temporary workaround)
-    if activation_label == "shiftedsoftplus":
-        model_state_dict = torch.load(model_filepath, map_location=torch.device(device))
-        model_state_dict = model_state_dict["model_state_dict"]
-        model.load_state_dict(model_state_dict)
-        model = model.to(device)
-        return model
-
     model_state_dict = torch.load(model_filepath, map_location=torch.device(device))
     model.load_state_dict(model_state_dict)
     model = model.to(device)
