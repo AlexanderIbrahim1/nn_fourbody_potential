@@ -22,6 +22,8 @@ from nn_fourbody_potential.transformations import StandardizeTransformer
 from nn_fourbody_potential.transformations import transform_sidelengths_data
 from nn_fourbody_potential import rescaling
 
+from nn_fourbody_potential._published_model import ShiftedSoftplus
+
 from nn_fourbody_potential_data.data_paths import FILTERED_SPLIT_ABINITIO_TEST_DATA_DIRPATH
 
 SIZE_TO_LABEL: dict[int, str] = {
@@ -61,14 +63,14 @@ def get_rescaling_function() -> rescaling.RescalingFunction:
 
 def model_filepath(size: int) -> Path:
     model_dirpath = Path("/home/a68ibrah/research/four_body_interactions/nn_fourbody_potential/models")
-    model_filename = f"fourbodypara_{SIZE_TO_LABEL[size]}.pth"
+    model_filename = f"fourbodypara_ssp_{SIZE_TO_LABEL[size]}.pth"
 
     return model_dirpath / model_filename
 
 
 def load_model(size: int) -> RegressionMultilayerPerceptron:
     layers = SIZE_TO_LAYERS[size]
-    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, layers)
+    model = RegressionMultilayerPerceptron(N_FEATURES, N_OUTPUTS, layers, activation_function_factory=ShiftedSoftplus)
 
     filepath = model_filepath(size)
     model_state_dict = torch.load(filepath)
@@ -106,7 +108,7 @@ def main(size: int) -> None:
             ]
         )
 
-    output_filename = f"test_and_predicted_energies_{SIZE_TO_LABEL[size]}.dat"
+    output_filename = f"test_and_predicted_energies_ssp_{SIZE_TO_LABEL[size]}.dat"
     output_dirpath = Path(".", "test_and_predicted_energies")
     output_filepath = output_dirpath / output_filename
 

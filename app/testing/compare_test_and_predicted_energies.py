@@ -20,7 +20,7 @@ def rmse(actual: NDArray, predicted: NDArray) -> float:
 
 
 def main(size: int) -> None:
-    energies_filename = f"test_and_predicted_energies_msle_{SIZE_TO_LABEL[size]}.dat"
+    energies_filename = f"test_and_predicted_energies_ssp_{SIZE_TO_LABEL[size]}.dat"
     energies_dirpath = Path(".", "test_and_predicted_energies")
     energies_filepath = energies_dirpath / energies_filename
     test_energies, predicted_energies = np.loadtxt(energies_filepath, unpack=True)
