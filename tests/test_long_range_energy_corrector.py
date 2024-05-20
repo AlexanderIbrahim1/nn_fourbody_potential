@@ -1,8 +1,7 @@
 import pytest
 
-from cartesian import Cartesian3D
-from cartesian.operations import relative_pair_distances
-
+from nn_fourbody_potential.cartesian import Cartesian3D
+from nn_fourbody_potential.cartesian.operations import relative_pair_distances
 from nn_fourbody_potential.full_range.long_range import LongRangeEnergyCorrector
 
 

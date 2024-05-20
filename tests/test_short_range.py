@@ -2,7 +2,7 @@ import pytest
 
 from typing import Sequence
 
-from nn_fourbody_potential.full_range.constants import SHORT_RANGE_DISTANCE_CUTOFF
+from nn_fourbody_potential.full_range.constants import LOWER_SHORT_DISTANCE
 from nn_fourbody_potential.full_range.constants import SHORT_RANGE_SCALING_STEP
 from nn_fourbody_potential.full_range.short_range import prepare_short_range_extrapolation_data
 
@@ -34,14 +34,14 @@ class Test_prepare_extrapolation_data:
         arb_sample = (1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
         with pytest.raises(ValueError):
             prepare_short_range_extrapolation_data(
-                arb_sample, invalid_scaling_step, short_range_cutoff=SHORT_RANGE_DISTANCE_CUTOFF, flag_skip_checks=False
+                arb_sample, invalid_scaling_step, short_range_cutoff=LOWER_SHORT_DISTANCE, flag_skip_checks=False
             )
 
     def test_raises_sidelengths_to_large(self) -> None:
-        too_large_sample = tuple([SHORT_RANGE_DISTANCE_CUTOFF * 1.05] * 6)
+        too_large_sample = tuple([LOWER_SHORT_DISTANCE * 1.05] * 6)
         with pytest.raises(ValueError):
             prepare_short_range_extrapolation_data(
-                too_large_sample, SHORT_RANGE_SCALING_STEP, SHORT_RANGE_DISTANCE_CUTOFF, flag_skip_checks=False
+                too_large_sample, SHORT_RANGE_SCALING_STEP, LOWER_SHORT_DISTANCE, flag_skip_checks=False
             )
 
     @pytest.mark.parametrize("invalid_sidelength", [0.0, -0.05])
@@ -51,7 +51,7 @@ class Test_prepare_extrapolation_data:
             prepare_short_range_extrapolation_data(
                 sample_with_invalid_sidelength,
                 SHORT_RANGE_SCALING_STEP,
-                SHORT_RANGE_DISTANCE_CUTOFF,
+                LOWER_SHORT_DISTANCE,
                 flag_skip_checks=False,
             )
 

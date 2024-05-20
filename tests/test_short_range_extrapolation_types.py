@@ -2,12 +2,6 @@ import pytest
 
 import numpy as np
 
-from typing import Sequence
-
-from nn_fourbody_potential.full_range.constants import SHORT_RANGE_DISTANCE_CUTOFF
-from nn_fourbody_potential.full_range.constants import SHORT_RANGE_SCALING_STEP
-from nn_fourbody_potential.full_range.short_range import prepare_short_range_extrapolation_data
-
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExtrapolationDistanceInfo
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import ExtrapolationEnergies
 from nn_fourbody_potential.full_range.short_range_extrapolation_types import LinearEnergyExtrapolator
