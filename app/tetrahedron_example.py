@@ -78,5 +78,5 @@ if __name__ == "__main__":
     # - "full" means the energies between 2.0 and 5.0 angstroms will be shown
     # - "zoom" means the plot will zoom into the weak energy dip around 3.7 angstroms, as
     #   shown in the publication that accompanies this repository
-    scale: str = "full"
+    scale: str = "zoom"
     main(device, scale)
