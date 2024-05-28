@@ -62,10 +62,6 @@ class ArithmeticRescalingFunction:
 
         average_pairdist = statistics.fmean(six_pair_distances)
 
-        # tanh_arg = 0.1 * (average_pairdist - 3.0)
-        # frac_disp = 0.5 * (1.0 + math.tanh(tanh_arg))
-        # frac_expon = 1.0 - frac_disp
-
         frac_disp = 1.0
         frac_expon = 1.0
 
