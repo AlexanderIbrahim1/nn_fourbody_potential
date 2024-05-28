@@ -1,1 +1,4 @@
+from nn_fourbody_potential.cartesian import Cartesian3D
+from nn_fourbody_potential.dispersion4b import QuadrupletDispersionPotential
+from nn_fourbody_potential.full_range import ExtrapolatedPotential
 from nn_fourbody_potential._published_model import load_potential
