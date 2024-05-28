@@ -92,7 +92,7 @@ The training is done through the `train_fourbody_model()` function in `app/train
 ## Data Availability
 The data (side lengths and corresponding isotropic four-body non-additive interaction energies) are located in the `data` directory.
 
-This repository only contains the *isotropic* four-body interaction energies, for which the Counterpoise Correction and the Lebedev quadrature have already been applied. The raw input and output files involved in the electronic structure calculations are available on the scientific data respository [Zenodo](doi:10.5281/zenodo.11272857).
+This repository only contains the *isotropic* four-body interaction energies, for which the Counterpoise Correction and the Lebedev quadrature have already been applied. The raw input and output files involved in the electronic structure calculations are available on the scientific data respository [Zenodo](https://zenodo.org/doi/10.5281/zenodo.11272855).
 
 
 ## Two-Body and Three-Body Potentials
