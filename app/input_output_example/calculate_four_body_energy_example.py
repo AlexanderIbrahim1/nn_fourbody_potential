@@ -29,9 +29,10 @@ def main() -> None:
     side_lengths = read_six_side_lengths(input_filepath).reshape(1, 6)
 
     size_label = "size64"
-    model_filepath = Path("..", "..", "models", "fourbodypara_64_128_128_64.pth")
+    activation_label = "shiftedsoftplus"
+    model_filepath = Path("..", "..", "models", "fourbodypara_ssp_64_128_128_64.pth")
     device = "cpu"
-    potential = load_potential(size_label, model_filepath, device=device)
+    potential = load_potential(size_label, activation_label, model_filepath, device=device)
 
     energies = potential(side_lengths)
 
