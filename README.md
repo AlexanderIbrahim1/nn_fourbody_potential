@@ -1,8 +1,8 @@
 # nn_fourbody_potential
 
-**NOTE: users who have accessed this repository through the `PES.tar` file provided as supplementary material by the Journal of Chemical Physics, are encouraged to access the github repository [github.com/AlexanderIbrahim1/nn_fourbody_potential](https://github.com/AlexanderIbrahim1/nn_fourbody_potential) for any possible updates to the potential.**
+**NOTE: users who have accessed this repository through the `PES.tar` file provided as supplementary material by the Journal of Chemical Physics, are strongly encouraged to access the github repository [github.com/AlexanderIbrahim1/nn_fourbody_potential](https://github.com/AlexanderIbrahim1/nn_fourbody_potential) for any possible updates to the potential.**
 
-This is the repository for the potential energy surface (PES) for the four-body correction interaction energy between four molecules of parahydrogen. Only the isotopic term in the potential expansion is used.
+This is the repository for the potential energy surface (PES) for the four-body non-additive interaction energy between four molecules of parahydrogen. Only the isotopic term in the potential expansion is used.
 
 We recommend using the potential through Python (described in the `Recommended Usage` section below).
 
@@ -58,11 +58,13 @@ from pathlib import Path
 from nn_fourbody_potential import load_potential
 import torch
 
+# an `activation_label` of "relu" works with `size_label` values of "size8", "size16", "size32", or "size64"
+# an `activation_label` of "shiftedsoftplus" only works with a `size_label` value of "size64"
 size_label: str = "size64"
-model_filepath: Path = Path('path', 'to', 'pytorch', 'model', 'model.pth')
+activation_label: str = "shiftedsoftplus"
+model_filepath: Path = Path("path", "to", "pytorch", "model", "model.pth")
 device: str = "cpu"  # "cuda"
-
-potential = load_potential(size_label, model_filepath, device=device)
+potential = load_potential(size_label, activation_label, model_filepath, device=device)
 
 # six side lengths go here
 side_lengths = torch.tensor([2.2, 2.3, 2.4, 2.5, 2.45, 2.35]).reshape(1, 6).to(device)
@@ -76,7 +78,7 @@ The files `app/tetrahedron_example.py` and `app/input_output_example/calculate_f
 In the directory `app/input_output_example`, we provide a Python script `calculate_four_body_energy_example.py` and a file `input.txt`.
 
 The `input.txt` file contains an example of six side lengths of a four-body geometry.
-The Python script will read in those six side lengths, calculate the four-body correction interaction energy for four parahydrogen molecules, and write them to `output.txt`.
+The Python script will read in those six side lengths, calculate the isotropic four-body non-additive interaction energy for the four parahydrogen molecules, and write them to `output.txt`.
 
 
 ## Data Cleaning and Training
@@ -85,6 +87,12 @@ The code for splitting the data into training, testing, and validation sets is l
 The code for training the neural network is located in `app/training`.
 
 The training is done through the `train_fourbody_model()` function in `app/training/training.py`. The other modules in the `app/training` contain functions and types that assist with the training process. The code is currently set for training the `64-128-128-64` model.
+
+
+## Data Availability
+The data (side lengths and corresponding isotropic four-body non-additive interaction energies) are located in the `data` directory.
+
+This repository only contains the *isotropic* four-body interaction energies, for which the Counterpoise Correction and the Lebedev quadrature have already been applied. The raw input and output files involved in the electronic structure calculations are available on the scientific data respository [Zenodo](doi:10.5281/zenodo.11272857).
 
 
 ## Two-Body and Three-Body Potentials
