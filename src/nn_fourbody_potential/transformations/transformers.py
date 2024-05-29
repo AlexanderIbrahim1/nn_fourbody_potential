@@ -17,6 +17,7 @@ from nn_fourbody_potential.common_types import SixSideLengths
 from nn_fourbody_potential.common_types import SixSideLengthsComparator
 from nn_fourbody_potential.common_types import TransformedSideLengths
 
+from nn_fourbody_potential.transformations._lookupshortest_permutations import lookupshortest_minimum_permutation
 from nn_fourbody_potential.transformations._permutations import minimum_permutation
 from nn_fourbody_potential.transformations._comparison import LessThanEpsilon
 
@@ -59,6 +60,17 @@ class MinimumPermutationTransformer(SixSideLengthsTransformer):
 
     def __call__(self, sidelens: SixSideLengths) -> TransformedSideLengths:
         return minimum_permutation(sidelens, self.less_than_comparator)  # type: ignore
+
+
+@dataclasses.dataclass(frozen=True)
+class LookupShortestMinimumPermutationTransformer(SixSideLengthsTransformer):
+    """
+    Find the minimum permutation of the six side lengths, under the assumption that
+    the two shortest side lengths among the six side lengths are unique.
+    """
+
+    def __call__(self, sidelens: SixSideLengths) -> TransformedSideLengths:
+        return lookupshortest_minimum_permutation(sidelens)  # type: ignore
 
 
 @dataclasses.dataclass(frozen=True)

@@ -18,6 +18,7 @@ from nn_fourbody_potential.models import RegressionMultilayerPerceptron
 from nn_fourbody_potential.transformations import SixSideLengthsTransformer
 from nn_fourbody_potential.transformations import ReciprocalTransformer
 from nn_fourbody_potential.transformations import MinimumPermutationTransformer
+from nn_fourbody_potential.transformations import LookupShortestMinimumPermutationTransformer
 from nn_fourbody_potential.transformations import StandardizeTransformer
 from nn_fourbody_potential import rescaling
 
@@ -50,6 +51,16 @@ def _published_feature_transformers() -> list[SixSideLengthsTransformer]:
         ReciprocalTransformer(),
         StandardizeTransformer((0.0, 1.0 / min_sidelen), (0.0, 1.0)),
         MinimumPermutationTransformer(),
+    ]
+
+
+def _published_feature_transformers_with_lookup_shortest() -> list[SixSideLengthsTransformer]:
+    min_sidelen = 2.2
+
+    return [
+        ReciprocalTransformer(),
+        StandardizeTransformer((0.0, 1.0 / min_sidelen), (0.0, 1.0)),
+        LookupShortestMinimumPermutationTransformer(),
     ]
 
 
@@ -95,8 +106,36 @@ def _published_load_model_weights(
 
 
 def load_potential(
-    size_label: str, activation_label: str, model_filepath: Union[str, Path], *, device: str
+    size_label: str,
+    activation_label: str,
+    model_filepath: Union[str, Path],
+    *,
+    device: str,
+    use_lookupshortest_permutation: bool = False,
 ) -> ExtrapolatedPotential:
+    """
+    size_label
+        - determines the size of the neural network
+        - allowed values are "size8", "size16", "size32", and "size64"
+
+    activation_label
+        - determines the activation function the neural network was trained with
+        - allowed values are "relu" and "shiftedsoftplus"
+        - if "shiftedsoftplus" is chosen, the only allowed `size_label` value is "size64"
+
+    model_filepath
+        - the path to the `.pth` file for the neural network
+
+    device
+        - which device the model will be loaded onto
+
+    use_lookupshortest_permutation
+        - decide if the minimum permutation transformation on the input will be performed
+          by the default transformer (which is slower but works for all inputs) or the
+          "lookup-shortest" transformer (which is faster but only works as long as the
+          shortest and second shortest side lengths are both unique among the side lengths)
+    """
+    size_label = str.lower(size_label)
     if size_label not in _SIZE_TO_LAYERS:
         raise RuntimeError(
             "Invalid size label found for the neural network model.\n"
@@ -110,7 +149,11 @@ def load_potential(
             "The activation label must be one of: 'relu', 'shiftedsoftplus'"
         )
 
-    transformers = _published_feature_transformers()
+    if use_lookupshortest_permutation:
+        transformers = _published_feature_transformers_with_lookup_shortest()
+    else:
+        transformers = _published_feature_transformers()
+
     model = _published_load_model_weights(size_label, activation_label, Path(model_filepath), device=device)
     rescaler = _published_output_to_energy_rescaler()
     return ExtrapolatedPotential(model, transformers, rescaler, device=device)
