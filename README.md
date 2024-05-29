@@ -88,7 +88,7 @@ The code for splitting the data into training, testing, and validation sets is l
 
 The code for training the neural network is located in `app/training`.
 
-The training is done through the `train_fourbody_model()` function in `app/training/training.py`. The other modules in the `app/training` contain functions and types that assist with the training process. The code is currently set for training the `64-128-128-64` model.
+The training is done through the `train_fourbody_model()` function in `app/training/training.py`. The other modules in the `app/training` contain functions and types that assist with the training process. The code is currently set for training the `64-128-128-64-SSP` model.
 
 
 ## Data Availability
