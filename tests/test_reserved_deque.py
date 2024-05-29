@@ -113,7 +113,7 @@ class TestReservedDeque:
         with pytest.raises(IndexError):
             default_deque_246[3]
 
-    def test_raises_dunder_getitem_past_end(self, default_deque_246: ReservedDeque):
+    def test_raises_dunder_getitem_past_start(self, default_deque_246: ReservedDeque):
         default_deque_246.pop_front()
         with pytest.raises(IndexError):
             default_deque_246[0]
