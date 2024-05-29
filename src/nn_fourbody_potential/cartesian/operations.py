@@ -99,15 +99,6 @@ def six_side_lengths_to_cartesian(
      - point1 lies on the positive x-axis
      - point2 satisfies (y >= 0, z == 0)
      - point3 satisfies (z >= 0)
-
-    The 'pairdistance_to_cartesian()' and the 'cartesian_to_pairdistance()' functions
-    are not inverses. We lose information when using the 'cartesian_to_pairdistance()'
-    transformation. The relative pair distances only have 6 degrees of freedom (DOF) of
-    information to work with, but the four Cartesian points have 12 DOF.
-
-    The three DOF describing the centre of mass position of the four-body system are
-    lost when converting from relative pair distances to Cartesian coordinates. The
-    three DOF describing the orientation in space of the four-body system are also lost.
     """
     x1 = r01
     x2 = (r01**2 + r02**2 - r12**2) / (2.0 * r01)
