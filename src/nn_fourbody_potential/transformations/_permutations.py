@@ -12,7 +12,8 @@ from nn_fourbody_potential.common_types import Permutation
 # an exhaustive, hard-coded list of all the possible permutations of index swaps,
 # except for the identity (0, 1, 2, 3, 4, 5), which would otherwise be the first
 # element of the list
-INDEX_SWAP_PERMUTATIONS = [
+INDEX_SWAP_PERMUTATIONS: list[Permutation] = [
+    (0, 1, 2, 3, 4, 5),
     (0, 2, 1, 4, 3, 5),
     (0, 3, 4, 1, 2, 5),
     (0, 4, 3, 2, 1, 5),
@@ -38,6 +39,8 @@ INDEX_SWAP_PERMUTATIONS = [
     (5, 4, 2, 3, 1, 0),
 ]
 
+N_PERMUTATIONS: int = 24
+
 
 def minimum_permutation(
     sidelens: SixSideLengths,
@@ -50,7 +53,8 @@ def minimum_permutation(
     """
     current_sidelens = copy.deepcopy(sidelens)
 
-    for perm in INDEX_SWAP_PERMUTATIONS:
+    for i_perm in range(1, N_PERMUTATIONS):
+        perm = INDEX_SWAP_PERMUTATIONS[i_perm]
         permuted_sidelens = _sidelengths_permutation(sidelens, perm)
         if less_than_comparator(permuted_sidelens, current_sidelens):
             current_sidelens = permuted_sidelens
