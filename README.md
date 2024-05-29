@@ -2,7 +2,7 @@
 
 **NOTE: users who have accessed this repository through the `PES.tar` file provided as supplementary material by the Journal of Chemical Physics, are strongly encouraged to access the github repository [github.com/AlexanderIbrahim1/nn_fourbody_potential](https://github.com/AlexanderIbrahim1/nn_fourbody_potential) for any possible updates to the potential.**
 
-This is the repository for the potential energy surface (PES) for the four-body non-additive interaction energy between four molecules of parahydrogen. Only the isotopic term in the potential expansion is used.
+This is the repository for the reference implementation of the potential energy surface (PES) for the four-body non-additive interaction energy between four molecules of parahydrogen. Only the isotopic term in the potential expansion is used.
 
 We recommend using the potential through Python (described in the `Recommended Usage` section below).
 
@@ -13,7 +13,7 @@ For compliance with the requirements for publishing PESs in the Journal of Chemi
 ```bash
 Python 3.9 <= 3.11
 torch >= 2.0.0
-matplotlib >= 3.8.3   # for seeing the plot in `example.py`
+matplotlib >= 3.8.3   # for seeing the plot in `tetrahedron_example.py`
 ```
 
 
@@ -72,6 +72,8 @@ energy = potential(side_lengths)
 ```
 
 The files `app/tetrahedron_example.py` and `app/input_output_example/calculate_four_body_energy_example.py` provide examples of using the potential this way.
+
+The `load_potential()` function also accepts the optional keyword flag `use_lookupshortest_permutation: bool`. When set to `True`, it uses the version of the minimum permutation transformer that assumes that the two shortest side lengths are unique, as described in the paper.
 
 
 ## Input and Output File Example
