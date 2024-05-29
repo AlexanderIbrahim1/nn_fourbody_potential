@@ -22,7 +22,7 @@ NUMBER_OF_SECOND_INDICES: int = 4
 ALL_INDICES: tuple[int, ...] = (0, 1, 2, 3, 4, 5)
 
 
-def approximate_minimum_permutation(sidelens: SixSideLengths) -> SixSideLengths:
+def lookupshortest_minimum_permutation(sidelens: SixSideLengths) -> SixSideLengths:
     """
     Find the minimum permutation of the six side lengths, assuming that the shortest
     and second shortest side lengths are both unique.
