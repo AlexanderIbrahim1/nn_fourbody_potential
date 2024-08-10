@@ -100,7 +100,7 @@ class ExtrapolatedPotential:
                 short_energy = calculate_short_range_energy()
                 energy = calculate_mixed_range_energy(short_energy, sample)
             elif ir == InteractionRange.MIXED_SHORTMID:
-                shortmid_energy = calculate_shortmid_range_energy()
+                shortmid_energy = calculate_shortmid_range_energy(sample)
                 energy = calculate_mixed_range_energy(shortmid_energy, sample)
             elif ir == InteractionRange.MIXED_MID:
                 mid_energy = calculate_mid_range_energy()
